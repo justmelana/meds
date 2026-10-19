@@ -100,6 +100,30 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--accent); ou
 .legend .nick { font-size: 13px; padding: 5px 6px; min-width: 24px; text-align: center; }
 .edit-actions .preview .nick { font-size: 14px; padding: 5px 7px; }
 @media (max-width: 520px) { .icons .nick { font-size: 9.5px; padding: 2px 3px; } }
+.todaycard { background: var(--surface); border-radius: 14px; padding: 12px 14px; margin-bottom: 12px; box-shadow: 0 4px 16px rgb(30 20 80 / .16); display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.todaycard h2 { font-family: var(--font-display); font-size: 1rem; margin: 0 6px 0 0; }
+.todaycard .none { color: var(--muted); font-size: 13.5px; }
+.todaycard button { display: inline-flex; align-items: center; gap: 6px; border: 1.5px dashed var(--mc); background: var(--surface); color: var(--ink); border-radius: 999px; padding: 5px 12px 5px 7px; font: inherit; font-size: 13px; cursor: pointer; }
+.todaycard button svg { width: 20px; height: 20px; }
+.todaycard button.done { border-style: solid; background: color-mix(in srgb, var(--mc) 14%, var(--surface)); }
+.todaycard button.done .st { color: var(--mc); font-weight: 700; }
+.todaycard .st { color: var(--muted); font-size: 12px; }
+.gw { display: inline-flex; align-items: center; border-radius: 5px; outline: 1.5px dashed currentColor; outline-offset: 1px; opacity: .5; }
+.gw.missed { outline-color: var(--danger); opacity: .6; }
+.key { display: flex; align-items: center; gap: 8px; margin-top: 10px; font-size: 12.5px; color: var(--on-bg-muted); }
+.key .gw { color: var(--on-bg); margin-left: 6px; }
+.key .gw svg { width: 16px; height: 16px; }
+.sched { display: grid; gap: 12px; padding: 12px; border-radius: 12px; background: var(--chip); }
+.field select { border: 1px solid var(--line); border-radius: 10px; padding: 8px 10px; font: inherit; background: var(--surface); color: var(--ink); }
+.field input[type=date], .field input[type=time] { min-height: 38px; }
+.daypick { display: flex; flex-wrap: wrap; gap: 6px; }
+.daypick button { width: 40px; height: 40px; border-radius: 50%; border: 1.5px solid var(--line); background: var(--surface); color: var(--ink); font: inherit; font-weight: 600; font-size: 13px; cursor: pointer; }
+.daypick button[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--surface); }
+.cyc { display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 10px; }
+.remrow { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+.remrow input[type=time] { border: 1px solid var(--line); border-radius: 10px; padding: 6px 10px; font: inherit; background: var(--surface); color: var(--ink); }
+.chk { display: inline-flex; align-items: center; gap: 8px; font-size: 14px; }
+.chk input { width: 20px; height: 20px; accent-color: var(--accent); }
 .row2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; }
 .field { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
 .field > span { font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); font-weight: 600; }
@@ -159,6 +183,8 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--accent); ou
     </div>
   </header>
 
+  <section class="todaycard" id="todayCard" aria-label="Due today"></section>
+
   <div class="legend" id="legend" role="toolbar" aria-label="Medications"></div>
   <p class="hint" id="hint"></p>
 
@@ -166,9 +192,31 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--accent); ou
     <h2 id="edTitle">Add a medication</h2>
     <div class="row2">
       <label class="field"><span>Name</span><input id="edName" maxlength="40" placeholder="e.g. Progesterone"></label>
-      <label class="field"><span>Schedule (optional)</span><input id="edSched" maxlength="50" placeholder="e.g. Nightly, or 3 times a week"></label>
       <label class="field"><span>Nickname (up to 6 letters)</span><input id="edNick" maxlength="6" placeholder="e.g. TC, Zep" autocapitalize="characters"></label>
       <div class="field"><span>Show on calendar</span><div class="seg" id="edShow"><button data-show="icon">Icon</button><button data-show="nick">Nickname</button></div></div>
+    </div>
+    <div class="sched">
+      <div class="row2">
+        <label class="field"><span>How often</span>
+          <select id="edFreq">
+            <option value="none">No set schedule</option>
+            <option value="daily">Every day</option>
+            <option value="days">Certain days of the week</option>
+            <option value="perweek">A number of times a week (any days)</option>
+            <option value="cycle">Days on, days off</option>
+          </select></label>
+        <label class="field"><span>Details (optional)</span><input id="edSched" maxlength="40" placeholder="e.g. calf, side stomach"></label>
+      </div>
+      <div class="field" id="fDays"><span>Which days</span><div class="daypick" id="edDays"></div></div>
+      <label class="field" id="fPerWeek"><span>Times a week</span><select id="edPerWeek"></select></label>
+      <div class="cyc" id="fCycle">
+        <label class="field"><span>Days on</span><select id="edOn"></select></label>
+        <label class="field"><span>Days off</span><select id="edOff"></select></label>
+        <label class="field"><span>First "on" day</span><input type="date" id="edStart"></label>
+      </div>
+      <div class="field" id="fRemind"><span>Reminder</span>
+        <div class="remrow"><label class="chk"><input type="checkbox" id="edRemind"> Remind me at</label><input type="time" id="edTime" value="09:00"></div>
+      </div>
     </div>
     <div class="field"><span>Icon</span><div class="picks" id="edShapes"></div></div>
     <div class="field"><span>Color</span><div class="picks" id="edColors"></div></div>
@@ -196,8 +244,10 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--accent); ou
     <div class="dow"><div>Sun</div><div>Mon</div><div>Tue</div><div>Wed</div><div>Thu</div><div>Fri</div><div>Sat</div></div>
     <div class="grid" id="grid"></div>
   </div>
+  <div class="key"><span class="gw">${KEY_DUE}</span> Due <span class="gw missed">${KEY_MISS}</span> Missed</div>
   <div class="status" id="status"></div>
   <div class="backup">
+    <button class="btn" id="remindBtn">Add reminders to Calendar</button>
     <button class="btn" id="backupBtn">Save a backup</button>
     <label class="btn">Restore a backup<input type="file" id="restoreFile" accept=".json,application/json"></label>
     <span id="backupMsg">Entries stay on this phone only.</span>
@@ -271,7 +321,7 @@ function setStatus(t) { const el = document.getElementById("status"); el.textCon
 function renderLegend() {
   const lg = document.getElementById("legend");
   lg.classList.toggle("editing", editing);
-  lg.innerHTML = meds.map(m => `<button class="med" data-med="${esc(m.id)}" aria-pressed="${!editing && activeMed === m.id}" style="--mc:${m.color}">${mark(m, 24)}<span class="lg"><b>${esc(m.name)}</b>${m.sched ? `<i>${esc(m.sched)}</i>` : ""}</span></button>`).join("")
+  lg.innerHTML = meds.map(m => `<button class="med" data-med="${esc(m.id)}" aria-pressed="${!editing && activeMed === m.id}" style="--mc:${m.color}">${mark(m, 24)}<span class="lg"><b>${esc(m.name)}</b>${medLabel(m) ? `<i>${esc(medLabel(m))}</i>` : ""}</span></button>`).join("")
     + `<button class="med" data-med="__notes" aria-pressed="${!editing && activeMed === "__notes"}" style="--mc:${NOTE.color}">${icon(NOTE, 24)}<span class="lg"><b>Notes</b><i>Tap a day to write</i></span></button>`
     + `<button class="tool" id="addBtn">+ Add medication</button>`
     + `<button class="tool${editing ? " on" : ""}" id="editBtn">${editing ? "Done editing" : "Edit"}</button>`;
@@ -282,6 +332,67 @@ function renderLegend() {
   else h.innerHTML = meds.length ? "Pick a medication above, then tap the days you took it." : "Tap <b>+ Add medication</b> to set up your first one.";
 }
 const medById = id => meds.find(m => m.id === id);
+
+// ---------- schedules ----------
+const DOW = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+const parseKey = k => { const [y, m, d] = k.split("-").map(Number); return new Date(y, m - 1, d); };
+const dayDiff = (a, b) => Math.round((Date.UTC(...b.split("-").map((v, i) => i === 1 ? v - 1 : +v)) - Date.UTC(...a.split("-").map((v, i) => i === 1 ? v - 1 : +v))) / 864e5);
+const addDays = (k, n) => { const d = parseKey(k); d.setDate(d.getDate() + n); return keyOf(d); };
+function schedText(m) {
+  const s = m.schedule; if (!s) return "";
+  if (s.type === "daily") return "Every day";
+  if (s.type === "days") {
+    if (s.days.length === 7) return "Every day";
+    if (s.days.length === 1) return "Every " + ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"][s.days[0]];
+    return s.days.slice().sort().map(d => DOW[d]).join(", ");
+  }
+  if (s.type === "perweek") return s.perWeek === 1 ? "Once a week" : s.perWeek === 2 ? "Twice a week" : s.perWeek + " times a week";
+  if (s.type === "cycle") return `${s.on} days on, ${s.off} off`;
+  return "";
+}
+const medLabel = m => [schedText(m), m.sched].filter(Boolean).join(" · ");
+function isDueFixed(m, k) {
+  const s = m.schedule; if (!s) return false;
+  if (s.since && k < s.since) return false;
+  if (s.type === "daily") return true;
+  if (s.type === "days") return s.days.includes(parseKey(k).getDay());
+  if (s.type === "cycle") { const d = dayDiff(s.start, k); return d >= 0 && d % (s.on + s.off) < s.on; }
+  return false;
+}
+const isTaken = (m, k) => !!(days[k] && days[k].meds && days[k].meds[m.id]);
+function weekCount(m, k) {
+  const start = addDays(k, -parseKey(k).getDay());
+  let c = 0; for (let i = 0; i < 7; i++) if (isTaken(m, addDays(start, i))) c++;
+  return c;
+}
+function toggleDose(medId, k) {
+  const e = days[k] || (days[k] = { meds: {}, notes: "" });
+  if (!e.meds) e.meds = {};
+  if (e.meds[medId]) delete e.meds[medId]; else e.meds[medId] = { site: "" };
+  if (!Object.keys(e.meds).length && !e.notes) delete days[k];
+  save(); renderGrid(); renderToday();
+}
+function renderToday() {
+  const items = [];
+  for (const m of meds) {
+    const s = m.schedule; if (!s || s.type === "none") continue;
+    const done = isTaken(m, todayKey);
+    if (s.type === "perweek") {
+      const c = weekCount(m, todayKey);
+      if (c >= s.perWeek && !done) continue;
+      items.push({ m, done, st: done ? `Done · ${c} of ${s.perWeek} this week` : `${c} of ${s.perWeek} this week` });
+    } else if (isDueFixed(m, todayKey)) {
+      items.push({ m, done, st: done ? "Done" : "Due" });
+    }
+  }
+  const el = document.getElementById("todayCard");
+  el.innerHTML = `<h2>Today</h2>` + (items.length
+    ? items.map(it => `<button class="${it.done ? "done" : ""}" data-today="${esc(it.m.id)}" style="--mc:${it.m.color}" aria-label="${esc(it.m.name)}: ${it.st}. Tap to ${it.done ? "undo" : "mark as taken"}.">${mark(it.m, 20)}<span>${esc(it.m.name)}</span><span class="st">${it.st}</span></button>`).join("")
+    : `<span class="none">${meds.some(m => m.schedule && m.schedule.type !== "none") ? "Nothing due today." : "Set a schedule for a medication (Edit, then tap it) to see what's due."}</span>`);
+}
+document.getElementById("todayCard").addEventListener("click", ev => {
+  const b = ev.target.closest("[data-today]"); if (b) toggleDose(b.dataset.today, todayKey);
+});
 document.getElementById("legend").addEventListener("click", ev => {
   if (ev.target.closest("#addBtn")) { openEditor(null); return; }
   if (ev.target.closest("#editBtn")) { editing = !editing; closeEditor(); renderLegend(); return; }
@@ -295,16 +406,48 @@ document.getElementById("legend").addEventListener("click", ev => {
 // ---------- editor ----------
 let edShow = "icon";
 let edId = null, edShape = "pill", edColor = COLORS[0], removeArmed = false;
+let edDays = [];
+(function initSchedFields() {
+  const opt = (n, label) => `<option value="${n}">${label || n}</option>`;
+  document.getElementById("edPerWeek").innerHTML = [1,2,3,4,5,6].map(n => opt(n)).join("");
+  document.getElementById("edOn").innerHTML = Array.from({ length: 21 }, (_, i) => opt(i + 1)).join("");
+  document.getElementById("edOff").innerHTML = Array.from({ length: 21 }, (_, i) => opt(i + 1)).join("");
+})();
+function renderSchedFields() {
+  const t = document.getElementById("edFreq").value;
+  document.getElementById("fDays").hidden = t !== "days";
+  document.getElementById("fPerWeek").hidden = t !== "perweek";
+  document.getElementById("fCycle").hidden = t !== "cycle";
+  document.getElementById("fRemind").hidden = t === "none";
+  document.getElementById("edDays").innerHTML = DOW.map((d, i) => `<button data-dow="${i}" aria-label="${d}" aria-pressed="${edDays.includes(i)}">${d[0]}</button>`).join("");
+}
+document.getElementById("edFreq").addEventListener("change", renderSchedFields);
+document.getElementById("edDays").addEventListener("click", ev => {
+  const b = ev.target.closest("[data-dow]"); if (!b) return;
+  const i = +b.dataset.dow; edDays = edDays.includes(i) ? edDays.filter(x => x !== i) : [...edDays, i];
+  renderSchedFields();
+});
 function openEditor(id) {
   edId = id; removeArmed = false;
   const m = id ? medById(id) : null;
   document.getElementById("edTitle").textContent = m ? `Edit ${m.name}` : "Add a medication";
   document.getElementById("edName").value = m ? m.name : "";
   document.getElementById("edSched").value = m ? (m.sched || "") : "";
+  const sc = (m && m.schedule) || { type: "none", days: [], perWeek: 3, on: 5, off: 2, start: todayKey };
+  document.getElementById("edFreq").value = sc.type || "none";
+  edDays = (sc.days || []).slice();
+  document.getElementById("edPerWeek").value = String(sc.perWeek || 3);
+  document.getElementById("edOn").value = String(sc.on || 5);
+  document.getElementById("edOff").value = String(sc.off || 2);
+  document.getElementById("edStart").value = sc.start || todayKey;
+  const rm0 = (m && m.remind) || { on: false, time: "09:00" };
+  document.getElementById("edRemind").checked = !!rm0.on;
+  document.getElementById("edTime").value = rm0.time || "09:00";
+  renderSchedFields();
   document.getElementById("edNick").value = m ? (m.nick || "") : "";
   edShow = m && m.show === "nick" ? "nick" : "icon";
   const used = new Set(meds.map(x => x.shape)), usedC = new Set(meds.map(x => x.color));
-  edShape = m ? m.shape : (Object.keys(SHAPES).find(s => !used.has(s)) || "pill");
+  edShape = m ? m.shape : (Object.keys(SHAPES).find(s => s !== "note" && !used.has(s)) || "pill");
   edColor = m ? m.color : (COLORS.find(c => !usedC.has(c)) || COLORS[0]);
   const rm = document.getElementById("edRemove");
   rm.hidden = !m; rm.classList.remove("confirm"); rm.textContent = "Remove";
@@ -315,7 +458,7 @@ function openEditor(id) {
 }
 function closeEditor() { document.getElementById("editor").hidden = true; edId = null; }
 function renderPicks() {
-  document.getElementById("edShapes").innerHTML = Object.keys(SHAPES).map(s => `<button data-shape="${s}" aria-label="${s} icon" aria-pressed="${s === edShape}">${icon({ shape: s, color: edColor })}</button>`).join("");
+  document.getElementById("edShapes").innerHTML = Object.keys(SHAPES).filter(x => x !== "note").map(s => `<button data-shape="${s}" aria-label="${s} icon" aria-pressed="${s === edShape}">${icon({ shape: s, color: edColor })}</button>`).join("");
   document.getElementById("edColors").innerHTML = COLORS.map(c => `<button class="sw" data-color="${c}" aria-label="Color ${c}" aria-pressed="${c === edColor}" style="background:${c}"></button>`).join("");
   const name = document.getElementById("edName").value.trim() || "Preview";
   const nick = document.getElementById("edNick").value.trim();
@@ -336,15 +479,26 @@ document.getElementById("edSave").onclick = () => {
   const sched = document.getElementById("edSched").value.trim();
   const nick = document.getElementById("edNick").value.trim();
   const show = nick && edShow === "nick" ? "nick" : "icon";
+  const type = document.getElementById("edFreq").value;
+  if (type === "days" && !edDays.length) { document.getElementById("edErr").textContent = "Pick at least one day."; return; }
+  const prev = edId ? medById(edId).schedule : null;
+  const schedule = type === "none" ? null : {
+    type, days: edDays.slice().sort(),
+    perWeek: +document.getElementById("edPerWeek").value,
+    on: +document.getElementById("edOn").value, off: +document.getElementById("edOff").value,
+    start: document.getElementById("edStart").value || todayKey,
+    since: (prev && prev.since) || todayKey,
+  };
+  const remind = { on: document.getElementById("edRemind").checked && !!schedule, time: document.getElementById("edTime").value || "09:00" };
   if (!name) { document.getElementById("edErr").textContent = "Give the medication a name."; return; }
   if (edId) {
-    Object.assign(medById(edId), { name, sched, nick, show, shape: edShape, color: edColor });
+    Object.assign(medById(edId), { name, sched, nick, show, schedule, remind, shape: edShape, color: edColor });
   } else {
     const id = "m" + Date.now().toString(36);
-    meds.push({ id, name, sched, nick, show, shape: edShape, color: edColor });
+    meds.push({ id, name, sched, nick, show, schedule, remind, shape: edShape, color: edColor });
     activeMed = id; editing = false;
   }
-  save(); closeEditor(); renderLegend(); renderGrid();
+  save(); closeEditor(); renderLegend(); renderGrid(); renderToday();
 };
 document.getElementById("edRemove").onclick = ev => {
   const b = ev.currentTarget;
@@ -352,7 +506,7 @@ document.getElementById("edRemove").onclick = ev => {
   meds = meds.filter(m => m.id !== edId);
   for (const k of Object.keys(days)) { if (days[k].meds) delete days[k].meds[edId]; }
   if (activeMed === edId) activeMed = null;
-  save(); closeEditor(); renderLegend(); renderGrid();
+  save(); closeEditor(); renderLegend(); renderGrid(); renderToday();
 };
 
 // ---------- calendar ----------
@@ -367,8 +521,14 @@ function renderGrid() {
     const k = `${y}-${pad(mo + 1)}-${pad(d)}`;
     const e = days[k];
     const taken = e && e.meds ? meds.filter(m => e.meds[m.id]) : [];
-    const label = `${view.toLocaleString("en-US", { month: "long" })} ${d}: ` + (taken.length ? taken.map(m => m.name).join(", ") : "nothing logged") + (e && e.notes ? ". Note: " + e.notes : "");
-    html += `<button class="day${k === todayKey ? " today" : ""}" data-k="${k}" aria-label="${esc(label)}"><span class="n">${d}</span><div class="icons">${taken.map(m => mark(m)).join("")}</div>${e && e.notes ? `<div class="note">${icon(NOTE)}<span>${esc(e.notes)}</span></div>` : ""}</button>`;
+    const marks = meds.map(m => {
+      if (e && e.meds && e.meds[m.id]) return mark(m);
+      if (!isDueFixed(m, k)) return "";
+      return `<span class="gw${k < todayKey ? " missed" : ""}" style="color:${m.color}" title="${esc(m.name)} ${k < todayKey ? "missed" : "due"}">${mark(m)}</span>`;
+    }).join("");
+    const dueNames = meds.filter(m => !(e && e.meds && e.meds[m.id]) && isDueFixed(m, k)).map(m => m.name);
+    const label = `${view.toLocaleString("en-US", { month: "long" })} ${d}: ` + (taken.length ? taken.map(m => m.name).join(", ") : "nothing logged") + (dueNames.length ? (k < todayKey ? ". Missed: " : ". Due: ") + dueNames.join(", ") : "") + (e && e.notes ? ". Note: " + e.notes : "");
+    html += `<button class="day${k === todayKey ? " today" : ""}" data-k="${k}" aria-label="${esc(label)}"><span class="n">${d}</span><div class="icons">${marks}</div>${e && e.notes ? `<div class="note">${icon(NOTE)}<span>${esc(e.notes)}</span></div>` : ""}</button>`;
   }
   document.getElementById("grid").innerHTML = html;
 }
@@ -378,11 +538,7 @@ document.getElementById("grid").addEventListener("click", ev => {
   if (!activeMed) { document.getElementById("hint").innerHTML = "Pick a medication above first, then tap the day."; return; }
   const k = b.dataset.k;
   if (activeMed === "__notes") { openNote(k); return; }
-  const e = days[k] || (days[k] = { meds: {}, notes: "" });
-  if (!e.meds) e.meds = {};
-  if (e.meds[activeMed]) delete e.meds[activeMed]; else e.meds[activeMed] = { site: "" };
-  if (!Object.keys(e.meds).length && !e.notes) delete days[k];
-  save(); renderGrid();
+  toggleDose(activeMed, k);
 });
 document.getElementById("prev").onclick = () => { view = new Date(view.getFullYear(), view.getMonth() - 1, 1); renderGrid(); };
 document.getElementById("next").onclick = () => { view = new Date(view.getFullYear(), view.getMonth() + 1, 1); renderGrid(); };
@@ -443,7 +599,7 @@ document.getElementById("restoreFile").onchange = ev => {
       if (!data || typeof data !== "object") throw 0;
       meds = []; days = {}; loadFrom(data);
       activeMed = meds.length ? meds[0].id : null;
-      save(); renderLegend(); renderGrid();
+      save(); renderLegend(); renderGrid(); renderToday();
       bmsg("Backup restored.");
     } catch (e) { bmsg("That file isn't a medication calendar backup."); }
     ev.target.value = "";
@@ -451,9 +607,47 @@ document.getElementById("restoreFile").onchange = ev => {
   r.readAsText(f);
 };
 
+// ---------- calendar reminders ----------
+function icsDate(k, time) { return k.replace(/-/g, "") + "T" + time.replace(":", "") + "00"; }
+function icsEsc(t) { return String(t).replace(/[\;,]/g, c => "\\" + c).replace(/\n/g, "\\n"); }
+const BYDAY = ["SU", "MO", "TU", "WE", "TH", "FR", "SA"];
+const SPREAD = { 1: [1], 2: [1, 4], 3: [1, 3, 5], 4: [0, 2, 4, 6], 5: [1, 2, 3, 4, 5], 6: [1, 2, 3, 4, 5, 6] };
+function firstOnOrAfter(k, dowList) { for (let i = 0; i < 7; i++) { const d = addDays(k, i); if (dowList.includes(parseKey(d).getDay())) return d; } return k; }
+function buildICS() {
+  const stamp = new Date().toISOString().replace(/[-:]/g, "").replace(/\.\d+/, "");
+  const ev = [];
+  for (const m of meds) {
+    if (!m.remind || !m.remind.on || !m.schedule) continue;
+    const s = m.schedule, t = m.remind.time || "09:00";
+    const title = "Take " + m.name + (m.sched ? " (" + m.sched + ")" : "");
+    const push = (uid, start, rule, desc) => ev.push([
+      "BEGIN:VEVENT", "UID:" + uid + "@medcalendar", "DTSTAMP:" + stamp,
+      "DTSTART:" + icsDate(start, t), "DURATION:PT15M", "RRULE:" + rule,
+      "SUMMARY:" + icsEsc(title), "DESCRIPTION:" + icsEsc(desc),
+      "BEGIN:VALARM", "ACTION:DISPLAY", "DESCRIPTION:" + icsEsc(title), "TRIGGER:PT0M", "END:VALARM", "END:VEVENT"].join("\r\n"));
+    const from = todayKey > (s.since || todayKey) ? todayKey : (s.since || todayKey);
+    if (s.type === "daily") push(m.id + "-d", from, "FREQ=DAILY", "Every day");
+    else if (s.type === "days") push(m.id + "-w", firstOnOrAfter(from, s.days), "FREQ=WEEKLY;BYDAY=" + s.days.map(d => BYDAY[d]).join(","), schedText(m));
+    else if (s.type === "perweek") { const dl = SPREAD[s.perWeek] || [1]; push(m.id + "-p", firstOnOrAfter(from, dl), "FREQ=WEEKLY;BYDAY=" + dl.map(d => BYDAY[d]).join(","), schedText(m) + ", on any days you like"); }
+    else if (s.type === "cycle") for (let i = 0; i < s.on; i++) push(m.id + "-c" + i, addDays(s.start, i), "FREQ=DAILY;INTERVAL=" + (s.on + s.off), schedText(m));
+  }
+  if (!ev.length) return null;
+  return ["BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//Medication Calendar//EN", "CALSCALE:GREGORIAN", "X-WR-CALNAME:Medications", ...ev, "END:VCALENDAR", ""].join("\r\n");
+}
+document.getElementById("remindBtn").onclick = () => {
+  const ics = buildICS();
+  if (!ics) { bmsg("Turn on a reminder first: tap Edit, tap a medication, set how often, and check Remind me."); return; }
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(new Blob([ics], { type: "text/calendar" }));
+  a.download = "medication-reminders.ics"; document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+  bmsg("Open the file and choose Add All to put the reminders in your Calendar.");
+};
+
 if ("serviceWorker" in navigator) { window.addEventListener("load", () => navigator.serviceWorker.register("sw.js").catch(() => {})); }
 
-renderLegend(); renderGrid();
+document.querySelector(".key").innerHTML = `<span class="gw">${icon({ shape: "pill", color: "currentColor" })}</span> Due <span class="gw missed">${icon({ shape: "pill", color: "currentColor" })}</span> Missed`;
+renderLegend(); renderGrid(); renderToday();
 </script>
 </body>
 </html>
