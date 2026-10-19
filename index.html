@@ -496,7 +496,7 @@ function renderTop() {
 function remSig() {
   return JSON.stringify(activeMeds().filter(m => m.remind && m.remind.on && m.schedule).map(m => [m.id, m.name, m.sched, m.schedule && { ...m.schedule, since: 0 }, remTimes(m)]));
 }
-const remindersStale = () => !!prefs.remSig && prefs.remSig !== remSig();
+const remindersStale = () => false; // Calendar reminders removed for now
 function backupDue() {
   const n = Object.keys(days).length;
   if (n < 3) return false;
@@ -705,7 +705,7 @@ function renderDaySheet(k) {
 let mmsg = "";
 function medRow(m) {
   const rt = remTimes(m);
-  return `<button class="mrow${m.archived ? " arch" : ""}" data-edit="${esc(m.id)}"><span class="mk">${mark(m, 28)}</span><span><b>${esc(m.name)}</b><small>${m.archived ? "Archived · history kept" : esc(medLabel(m) || "No schedule") + (m.remind && m.remind.on && m.schedule ? " · reminder " + rt.map(fmtTime).join(", ") : "")}</small></span><span class="chev">›</span></button>`;
+  return `<button class="mrow${m.archived ? " arch" : ""}" data-edit="${esc(m.id)}"><span class="mk">${mark(m, 28)}</span><span><b>${esc(m.name)}</b><small>${m.archived ? "Archived · history kept" : esc(medLabel(m) || "No schedule")}</small></span><span class="chev">›</span></button>`;
 }
 function renderManage() {
   sheet.setAttribute("aria-label", "Medications");
@@ -717,9 +717,6 @@ function renderManage() {
     <div class="msect">
       <span class="lbl">For appointments</span>
       <button class="btn" id="summaryBtn">Monthly summary <span>›</span></button>
-      <span class="lbl" style="margin-top:8px">Reminders</span>
-      ${stale ? `<div class="inst"><b>Your reminders are out of date.</b> To replace them:<ol><li>In the Calendar app, tap <b>Calendars</b>, tap the ⓘ next to <b>Medications</b>, and choose <b>Delete Calendar</b>.</li><li>Come back here and tap <b>Add reminders to Calendar</b>, then choose <b>Add All</b> into a new calendar called Medications.</li></ol></div>` : ""}
-      <button class="btn${stale ? " primary" : ""}" id="remindBtn">Add reminders to Calendar <span>›</span></button>
       <span class="lbl" style="margin-top:8px">Backup</span>
       <button class="btn" id="backupBtn">Save a backup <span>›</span></button>
       <label class="btn">Restore a backup <span>›</span><input type="file" id="restoreFile" accept=".json,application/json"></label>
@@ -770,10 +767,6 @@ function renderEditor(id) {
         <label class="field"><span class="lbl">Days off</span><select id="edOff">${opts(Array.from({ length: 21 }, (_, i) => i + 1), sc.off || 2)}</select></label>
         <label class="field"><span class="lbl">First "on" day</span><input type="date" id="edStart" value="${sc.start || todayKey}"></label>
       </div>
-      <div class="field" id="fRemind"><span class="lbl">Reminder</span>
-        <label class="chk"><input type="checkbox" id="edRemind"${rm.on ? " checked" : ""}> Remind me at</label>
-        <div class="timesrow" id="edTimes"></div>
-      </div>
     </div>
     <label class="field"><span class="lbl">Details (optional)</span><input id="edSched" maxlength="40" placeholder="e.g. calf, with food" value="${esc(m ? m.sched || "" : "")}"></label>
     <label class="field"><span class="lbl">Sites to rotate (optional, separate with commas)</span><input id="edSites" maxlength="200" placeholder="e.g. Left thigh, Right thigh, Left arm" value="${esc(m && m.sites ? m.sites.join(", ") : "")}"></label>
@@ -802,12 +795,8 @@ function edRefresh() {
   $("fDays").hidden = ed.type !== "days";
   $("fPerWeek").hidden = ed.type !== "perweek";
   $("fCycle").hidden = ed.type !== "cycle";
-  $("fRemind").hidden = ed.type === "none";
   $("fDose").hidden = !$("edTrack").checked;
   $("edDays").innerHTML = DOW.map((d, i) => `<button data-dow="${i}" aria-label="${DOWL[i]}" aria-pressed="${ed.days.includes(i)}">${d[0]}</button>`).join("");
-  // keep typed times when re-rendering
-  document.querySelectorAll("#edTimes input").forEach((inp, i) => ed.times[i] = inp.value || ed.times[i]);
-  $("edTimes").innerHTML = ed.times.slice(0, ed.perDay).map((t, i) => `<input type="time" data-ti="${i}" value="${t}" aria-label="Reminder time ${i + 1}" style="border:1px solid var(--line);border-radius:10px;padding:6px 10px;font:inherit;background:var(--surface);color:var(--ink)">`).join("");
   const showNow = nick && ed.show === "nick" ? "nick" : "icon";
   document.querySelector('#edShow [data-show="nick"]').disabled = !nick;
   document.querySelectorAll("#edShow [data-show]").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.show === showNow)));
@@ -820,7 +809,6 @@ function edSave() {
   const name = $("edName").value.trim();
   if (!name) { $("edErr").textContent = "Give the medication a name."; return; }
   if (ed.type === "days" && !ed.days.length) { $("edErr").textContent = "Pick at least one day."; return; }
-  document.querySelectorAll("#edTimes input").forEach((inp, i) => ed.times[i] = inp.value || ed.times[i]);
   const nick = $("edNick").value.trim();
   const prev = ed.id ? medById(ed.id).schedule : null;
   const schedule = ed.type === "none" ? null : {
@@ -831,7 +819,7 @@ function edSave() {
   const times = ed.times.slice(0, ed.perDay);
   const fields = {
     name, nick, show: nick && ed.show === "nick" ? "nick" : "icon", sched: $("edSched").value.trim(), schedule,
-    remind: { on: $("edRemind").checked && !!schedule, time: times[0], times },
+    remind: (ed.id && medById(ed.id).remind) || { on: false, time: times[0], times },
     perDay: ed.perDay, sites: $("edSites").value.split(",").map(s => s.trim()).filter(Boolean),
     trackDose: $("edTrack").checked, dose: $("edDose").value.trim(), shape: ed.shape, color: ed.color,
   };
@@ -929,7 +917,6 @@ sheet.addEventListener("click", ev => {
     const e = t.closest("[data-edit]");
     if (e) { go("edit", e.dataset.edit || null); return; }
     if (t.closest("#summaryBtn")) { go("summary", null); return; }
-    if (t.closest("#remindBtn")) { exportReminders(); return; }
     if (t.closest("#backupBtn")) { saveBackup(); return; }
     return;
   }
