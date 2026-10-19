@@ -659,6 +659,16 @@ function flushNote() {
   e.notes = text; setEntry(k, text || (e.meds && Object.keys(e.meds).length) ? e : null);
   save();
 }
+// Day view shows only what belongs on that day: anything already taken, anything scheduled,
+// and "times a week" medications while that week's goal isn't met yet.
+function dueOnDay(m, k) {
+  if (isTaken(m, k)) return true;
+  if (m.archived) return false;
+  if (isDueFixed(m, k)) return true;
+  const s = m.schedule;
+  if (s && s.type === "perweek" && (!s.since || k >= s.since)) return weekCount(m, k) < s.perWeek;
+  return false;
+}
 function lastBefore(m, k, field) {
   const ks = Object.keys(days).filter(x => x < k && days[x].meds && days[x].meds[m.id] && days[x].meds[m.id][field]).sort();
   return ks.length ? { k: ks[ks.length - 1], v: days[ks[ks.length - 1]].meds[m.id][field] } : null;
@@ -673,7 +683,7 @@ function suggestSite(m, k) {
 function renderDaySheet(k) {
   noteKey = k;
   const e = days[k] || {};
-  const list = meds.filter(m => !m.archived || isTaken(m, k));
+  const list = meds.filter(m => dueOnDay(m, k));
   const rows = list.map(m => {
     const st = statusFor(m, k), c = doseCount(m, k), max = perDay(m), d = dose(m, k);
     const pillText = st === "taken" ? (max > 1 ? `${c} of ${max}` : "Taken") : st === "partial" ? `${c} of ${max}` : st === "due" ? "Due" : st === "missed" ? "Missed" : "Not taken";
@@ -695,8 +705,8 @@ function renderDaySheet(k) {
   for (const m of list) { const d = dose(m, k); if (d && m.trackDose && d.amt == null) { const la = lastBefore(m, k, "amt"); const v = la ? la.v : (m.dose || ""); if (v) d.amt = v; } }
   const wk = parseKey(k);
   sheet.setAttribute("aria-label", fmtLong(k));
-  sheet.innerHTML = `<div class="shead"><div><h2>${DOWL[wk.getDay()]}, ${wk.toLocaleDateString("en-US", { month: "long", day: "numeric" })}</h2><div class="sub">${k === todayKey ? "Today" : k < todayKey ? dayDiff(k, todayKey) + " days ago" : "In " + dayDiff(todayKey, k) + " days"} · tap a medication to mark it</div></div><button class="xbtn" data-close aria-label="Close">${XICON}</button></div>
-    <div class="drows">${rows || `<p class="empty-note">No medications yet. Add them from the settings button.</p>`}</div>
+  sheet.innerHTML = `<div class="shead"><div><h2>${DOWL[wk.getDay()]}, ${wk.toLocaleDateString("en-US", { month: "long", day: "numeric" })}</h2><div class="sub">${k === todayKey ? "Today" : k < todayKey ? dayDiff(k, todayKey) + " days ago" : "In " + dayDiff(todayKey, k) + " days"} ${list.length ? " · tap a medication to mark it" : ""}</div></div><button class="xbtn" data-close aria-label="Close">${XICON}</button></div>
+    <div class="drows">${rows || `<p class="empty-note">${activeMeds().length ? "Nothing is scheduled for this day. To mark something else, close this and use the medication buttons above the calendar." : "No medications yet. Add them from the settings button."}</p>`}</div>
     <div class="dnote"><span class="lbl">Note</span><textarea id="dNote" maxlength="1000" placeholder="How you felt, side effects, dose changes">${esc(e.notes || "")}</textarea></div>
     <div class="sfoot"><button class="btn primary" data-close>Done</button></div>`;
 }
