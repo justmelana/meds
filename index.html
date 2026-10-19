@@ -229,6 +229,68 @@ textarea { min-height: 80px; resize: vertical; }
 
 .toast { position: fixed; left: 50%; bottom: calc(18px + env(safe-area-inset-bottom)); transform: translateX(-50%); background: rgb(20 14 50 / .85); color: #fff; font-size: 13px; padding: 7px 14px; border-radius: 999px; opacity: 0; transition: opacity .2s; pointer-events: none; z-index: 30; }
 .toast.show { opacity: 1; }
+
+/* banners */
+.banners { display: grid; gap: 8px; }
+.banner { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding: 10px 12px; }
+.banner .bi { width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; background: var(--chip); color: var(--accent); flex: none; }
+.banner .bi svg { width: 17px; height: 17px; }
+.banner .bt { flex: 1; min-width: 160px; font-size: 13.5px; }
+.banner .bt b { display: block; }
+.banner .bt span { color: var(--muted); font-size: 12.5px; }
+.banner .btn { padding: 7px 14px; font-size: 13.5px; }
+.lastweek { font-size: 12.5px; color: var(--muted); }
+.lastweek b { color: var(--danger); font-weight: 600; }
+
+/* partial doses */
+.part { display: inline-flex; align-items: center; gap: 1px; }
+.part sub, .cntx { font-size: 9.5px; font-weight: 700; color: var(--muted); vertical-align: baseline; line-height: 1; }
+.wbody .part sub, .wbody .cntx { font-size: 12px; }
+.pill.partial { border-style: solid; border-color: var(--mc); color: var(--ink); }
+
+/* day view extras */
+.dcard { display: grid; gap: 0; }
+.dcard .drow.hasx { border-bottom-left-radius: 0; border-bottom-right-radius: 0; }
+.dextra { border: 1.5px solid var(--mc); border-top: none; border-radius: 0 0 14px 14px; padding: 10px 12px 12px; display: grid; gap: 10px; background: color-mix(in srgb, var(--mc) 5%, var(--surface)); }
+.sites { display: flex; flex-wrap: wrap; gap: 6px; }
+.sites button { border: 1.5px solid var(--line); background: var(--surface); border-radius: 999px; padding: 6px 12px; font-size: 13.5px; cursor: pointer; }
+.sites button.sugg { border-style: dashed; border-color: var(--mc); }
+.sites button[aria-pressed="true"] { background: var(--mc); border-color: var(--mc); color: #fff; font-weight: 600; }
+.xhint { font-size: 12px; color: var(--muted); }
+.amtrow { display: flex; align-items: center; gap: 8px; }
+.amtrow input { flex: 1; min-width: 0; border: 1px solid var(--line); border-radius: 10px; padding: 8px 10px; font: inherit; font-size: 16px; background: var(--surface); color: var(--ink); }
+
+/* toast with undo */
+.toast { display: flex; align-items: center; gap: 12px; }
+.toast.act { pointer-events: auto; }
+.toast button { border: none; background: none; color: #c9c5ff; font-weight: 700; font-size: 13px; cursor: pointer; padding: 0; }
+
+/* week summary */
+.wsum { padding: 10px 6px 4px; display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 13px; color: var(--muted); border-top: 1px solid var(--line); }
+.wsum b { color: var(--ink); }
+.wsum .short { color: var(--danger); }
+.wsum .ok { color: #2e8a4e; }
+
+/* summary */
+.sumhead { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
+.sumhead .nav button { box-shadow: none; border: 1px solid var(--line); }
+.scard { border: 1px solid var(--line); border-radius: 14px; padding: 12px; display: grid; gap: 6px; }
+.scard + .scard { margin-top: 8px; }
+.scard .sh { display: flex; align-items: center; gap: 10px; }
+.scard .sh svg { width: 26px; height: 26px; }
+.scard .sh b { flex: 1; }
+.scard .pct { font-family: var(--font-display); font-weight: 700; font-size: 18px; font-variant-numeric: tabular-nums; }
+.scard .pct.low { color: var(--danger); }
+.scard dl { margin: 0; display: grid; grid-template-columns: auto 1fr; gap: 2px 12px; font-size: 13px; }
+.scard dt { color: var(--muted); }
+.scard dd { margin: 0; }
+.snotes { margin-top: 12px; display: grid; gap: 6px; font-size: 13.5px; }
+.snotes div { display: grid; grid-template-columns: 64px 1fr; gap: 8px; }
+.snotes span { color: var(--muted); }
+.arch { opacity: .7; }
+.inst { font-size: 13px; color: var(--muted); background: var(--chip); border-radius: 12px; padding: 10px 12px; }
+.inst ol { margin: 4px 0 0; padding-left: 18px; }
+.timesrow { display: flex; flex-wrap: wrap; gap: 8px; }
 </style>
 </head>
 <body>
@@ -249,9 +311,12 @@ textarea { min-height: 80px; resize: vertical; }
     </div>
   </div>
 
+  <div class="banners" id="banners"></div>
+
   <section class="card today" aria-labelledby="todayTitle">
     <h2 id="todayTitle">Today <small id="todayDate"></small></h2>
     <div class="todaylist" id="todayList"></div>
+    <div class="lastweek" id="lastWeek" hidden></div>
   </section>
 
   <div class="tray">
@@ -265,7 +330,7 @@ textarea { min-height: 80px; resize: vertical; }
 
 <div class="backdrop" id="backdrop" hidden></div>
 <div class="sheet" id="sheet" role="dialog" aria-modal="true" hidden></div>
-<div class="toast" id="toast" role="status"></div>
+<div class="toast" id="toast" role="status"><span id="toastText"></span><button id="toastUndo" hidden>Undo</button></div>
 
 <script>
 const SHAPES = {
@@ -287,6 +352,8 @@ const SHAPES = {
 SHAPES.note = '<path d="M6 3h9l4 4v13a1.5 1.5 0 0 1-1.5 1.5h-11A1.5 1.5 0 0 1 5 20V4.5A1.5 1.5 0 0 1 6.5 3z" fill="currentColor"/><path d="M15 3v4h4" fill="#fff" opacity=".45"/><path d="M8.5 11h7M8.5 14h7M8.5 17h4.5" stroke="#fff" stroke-opacity=".85" stroke-width="1.5" stroke-linecap="round"/>';
 const NOTE = { shape: "note", color: "#7a83a0" };
 const XICON = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg>';
+const SAVEICON = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v11m0 0l-4-4m4 4l4-4M5 19h14" stroke="currentColor" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+const BELLICON = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 16V11a6 6 0 0 1 12 0v5l1.5 2h-15zM10 20a2 2 0 0 0 4 0" stroke="currentColor" stroke-width="2" fill="none" stroke-linejoin="round"/></svg>';
 const COLORS = ["#d4920f", "#8a4fd0", "#d24c7c", "#138a86", "#2f6fd6", "#3e9b3e", "#e0602f", "#c23b3b", "#5b6b84", "#0e9fc9"];
 
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
@@ -302,7 +369,9 @@ const DOW = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 const DOWL = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 const fmtLong = k => parseKey(k).toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" });
 const fmtShort = k => parseKey(k).toLocaleDateString("en-US", { month: "short", day: "numeric" });
+const fmtTime = t => { const [h, m] = (t || "09:00").split(":").map(Number); return `${((h + 11) % 12) + 1}:${pad(m)} ${h < 12 ? "AM" : "PM"}`; };
 const todayKey = keyOf(new Date());
+const clone = o => o == null ? o : JSON.parse(JSON.stringify(o));
 
 // ---------- state & storage ----------
 let days = {}, meds = [];
@@ -319,32 +388,49 @@ function loadFrom(data) {
   } else days = data;
 }
 try { loadFrom(JSON.parse(localStorage.getItem(LS) || "{}")); } catch (e) {}
-function save() {
-  try { localStorage.setItem(LS, JSON.stringify({ version: 2, days, meds })); toast("Saved"); }
+function save(quiet) {
+  try { localStorage.setItem(LS, JSON.stringify({ version: 2, days, meds })); if (!quiet) toast("Saved"); }
   catch (e) { toast("Could not save"); }
 }
-let toastT;
-function toast(t) { const el = document.getElementById("toast"); el.textContent = t; el.classList.add("show"); clearTimeout(toastT); toastT = setTimeout(() => el.classList.remove("show"), 1200); }
+// Ask the phone to keep this app's storage instead of clearing it when space runs low
+try { if (navigator.storage && navigator.storage.persist) navigator.storage.persist().then(ok => { prefs.persisted = !!ok; savePrefs(); }).catch(() => {}); } catch (e) {}
 
-// view cursor: month view uses first of month; week view uses Sunday of week
+let toastT, undoFn = null;
+function toast(t, onUndo) {
+  const el = document.getElementById("toast");
+  document.getElementById("toastText").textContent = t;
+  undoFn = onUndo || null;
+  document.getElementById("toastUndo").hidden = !onUndo;
+  el.classList.toggle("act", !!onUndo);
+  el.classList.add("show");
+  clearTimeout(toastT);
+  toastT = setTimeout(() => { el.classList.remove("show", "act"); undoFn = null; }, onUndo ? 5000 : 1200);
+}
+document.getElementById("toastUndo").onclick = () => {
+  if (undoFn) { const f = undoFn; undoFn = null; f(); }
+  document.getElementById("toast").classList.remove("show", "act");
+};
+
 let cursor = todayKey;
 
-// ---------- schedules ----------
+// ---------- medications & schedules ----------
 const medById = id => meds.find(m => m.id === id);
+const activeMeds = () => meds.filter(m => !m.archived);
+const perDay = m => Math.max(1, m.perDay || 1);
 function schedText(m) {
-  const s = m.schedule; if (!s) return "";
-  if (s.type === "daily") return "Every day";
-  if (s.type === "days") {
-    if (s.days.length === 7) return "Every day";
-    if (s.days.length === 1) return "Every " + DOWL[s.days[0]];
-    return s.days.slice().sort().map(d => DOW[d]).join(", ");
+  const s = m.schedule; let t = "";
+  if (s) {
+    if (s.type === "daily") t = "Every day";
+    else if (s.type === "days") t = s.days.length === 7 ? "Every day" : s.days.length === 1 ? "Every " + DOWL[s.days[0]] : s.days.slice().sort().map(d => DOW[d]).join(", ");
+    else if (s.type === "perweek") t = s.perWeek === 1 ? "Once a week" : s.perWeek === 2 ? "Twice a week" : s.perWeek + " times a week";
+    else if (s.type === "cycle") t = `${s.on} days on, ${s.off} off`;
   }
-  if (s.type === "perweek") return s.perWeek === 1 ? "Once a week" : s.perWeek === 2 ? "Twice a week" : s.perWeek + " times a week";
-  if (s.type === "cycle") return `${s.on} days on, ${s.off} off`;
-  return "";
+  if (perDay(m) > 1) t = (t ? t + ", " : "") + perDay(m) + "× a day";
+  return t;
 }
 const medLabel = m => [schedText(m), m.sched].filter(Boolean).join(" · ");
 function isDueFixed(m, k) {
+  if (m.archived) return false;
   const s = m.schedule; if (!s) return false;
   if (s.since && k < s.since) return false;
   if (s.type === "daily") return true;
@@ -352,77 +438,125 @@ function isDueFixed(m, k) {
   if (s.type === "cycle") { const d = dayDiff(s.start, k); return d >= 0 && d % (s.on + s.off) < s.on; }
   return false;
 }
-const isTaken = (m, k) => !!(days[k] && days[k].meds && days[k].meds[m.id]);
+const dose = (m, k) => days[k] && days[k].meds && days[k].meds[m.id];
+const doseCount = (m, k) => { const d = dose(m, k); return d ? (d.n || 1) : 0; };
+const isTaken = (m, k) => doseCount(m, k) > 0;
+function weekStart(k) { return addDays(k, -parseKey(k).getDay()); }
 function weekCount(m, k) {
-  const start = addDays(k, -parseKey(k).getDay());
-  let c = 0; for (let i = 0; i < 7; i++) if (isTaken(m, addDays(start, i))) c++;
+  const s = weekStart(k); let c = 0;
+  for (let i = 0; i < 7; i++) if (isTaken(m, addDays(s, i))) c++;
   return c;
 }
 function statusFor(m, k) {
-  if (isTaken(m, k)) return "taken";
+  const c = doseCount(m, k);
+  if (c >= perDay(m)) return "taken";
+  if (c > 0) return "partial";
   if (isDueFixed(m, k)) return k < todayKey ? "missed" : "due";
   return "";
 }
-function toggleDose(medId, k) {
-  const e = days[k] || (days[k] = { meds: {}, notes: "" });
+// results for "times a week" medications in the week starting s
+function weekResults(s) {
+  const e = addDays(s, 6);
+  return activeMeds().filter(m => m.schedule && m.schedule.type === "perweek" && (!m.schedule.since || m.schedule.since <= e))
+    .map(m => ({ m, c: weekCount(m, s), target: m.schedule.perWeek }));
+}
+
+// ---------- marking doses (with undo) ----------
+function setEntry(k, val) { if (val) days[k] = val; else delete days[k]; }
+function stepDose(medId, k, opts) {
+  const m = medById(medId); if (!m) return;
+  const before = clone(days[k]);
+  const e = days[k] || { meds: {}, notes: "" };
   if (!e.meds) e.meds = {};
-  if (e.meds[medId]) delete e.meds[medId]; else e.meds[medId] = { site: "" };
-  if (!Object.keys(e.meds).length && !e.notes) delete days[k];
-  save(); renderMain();
+  const c = doseCount(m, k), max = perDay(m);
+  const next = c >= max ? 0 : c + 1;
+  if (next === 0) delete e.meds[medId];
+  else e.meds[medId] = Object.assign(e.meds[medId] || { site: "" }, { n: next });
+  setEntry(k, Object.keys(e.meds).length || e.notes ? e : null);
+  save(true); renderMain();
+  if (opts && opts.after) opts.after();
+  const what = next === 0 ? "Removed" : max > 1 ? `Marked ${next} of ${max}:` : "Marked";
+  toast(`${what} ${m.name}, ${fmtShort(k)}`, () => { setEntry(k, before); save(true); renderMain(); if (opts && opts.after) opts.after(); toast("Undone"); });
 }
 
 // ---------- main render ----------
-function renderMain() { renderTop(); renderToday(); renderTray(); renderCal(); }
-function weekStart(k) { return addDays(k, -parseKey(k).getDay()); }
+function renderMain() { renderTop(); renderBanners(); renderToday(); renderTray(); renderCal(); }
 function renderTop() {
-  const d = parseKey(cursor);
   let t;
   if (prefs.view === "week") {
-    const s = weekStart(cursor), e = addDays(s, 6);
-    const sd = parseKey(s), ed = parseKey(e);
+    const s = weekStart(cursor), e = addDays(s, 6), sd = parseKey(s), ed = parseKey(e);
     t = sd.getMonth() === ed.getMonth()
-      ? `${sd.toLocaleString("en-US", { month: "short" })} ${sd.getDate()} – ${ed.getDate()}`
-      : `${fmtShort(s)} – ${fmtShort(e)}`;
-  } else t = d.toLocaleString("en-US", { month: "long", year: "numeric" });
+      ? `${sd.toLocaleString("en-US", { month: "short" })} ${sd.getDate()} – ${ed.getDate()}, ${ed.getFullYear()}`
+      : `${fmtShort(s)} – ${fmtShort(e)}, ${ed.getFullYear()}`;
+  } else t = parseKey(cursor).toLocaleString("en-US", { month: "long", year: "numeric" });
   document.getElementById("title").textContent = t;
   document.querySelectorAll(".seg [data-view]").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.view === prefs.view)));
 }
+// reminder freshness: fingerprint of everything that goes into the Calendar file
+function remSig() {
+  return JSON.stringify(activeMeds().filter(m => m.remind && m.remind.on && m.schedule).map(m => [m.id, m.name, m.sched, m.schedule && { ...m.schedule, since: 0 }, remTimes(m)]));
+}
+const remindersStale = () => !!prefs.remSig && prefs.remSig !== remSig();
+function backupDue() {
+  const n = Object.keys(days).length;
+  if (n < 3) return false;
+  if (prefs.snooze && prefs.snooze > todayKey) return false;
+  return !prefs.lastBackup || dayDiff(prefs.lastBackup, todayKey) >= 14;
+}
+function renderBanners() {
+  const b = [];
+  if (backupDue()) b.push(`<div class="card banner"><span class="bi">${SAVEICON}</span><span class="bt"><b>Back up your entries</b><span>${prefs.lastBackup ? "Last backup " + dayDiff(prefs.lastBackup, todayKey) + " days ago" : "You haven't saved a backup yet"}. Entries live only on this phone.</span></span><button class="btn" data-bn="later">Later</button><button class="btn primary" data-bn="backup">Back up</button></div>`);
+  if (remindersStale()) b.push(`<div class="card banner"><span class="bi">${BELLICON}</span><span class="bt"><b>Your Calendar reminders are out of date</b><span>A schedule or reminder changed since you added them.</span></span><button class="btn primary" data-bn="rem">Update</button></div>`);
+  document.getElementById("banners").innerHTML = b.join("");
+}
+document.getElementById("banners").addEventListener("click", ev => {
+  const t = ev.target.closest("[data-bn]"); if (!t) return;
+  if (t.dataset.bn === "later") { prefs.snooze = addDays(todayKey, 3); savePrefs(); renderBanners(); }
+  if (t.dataset.bn === "backup") saveBackup();
+  if (t.dataset.bn === "rem") openSheet("manage");
+});
 function renderToday() {
   document.getElementById("todayDate").textContent = fmtLong(todayKey);
   const items = [];
-  for (const m of meds) {
+  for (const m of activeMeds()) {
     const s = m.schedule; if (!s) continue;
-    const done = isTaken(m, todayKey);
+    const c = doseCount(m, todayKey), max = perDay(m), done = c >= max;
+    const doseTxt = max > 1 ? ` · ${c} of ${max} today` : "";
     if (s.type === "perweek") {
-      const c = weekCount(m, todayKey);
-      if (c >= s.perWeek && !done) continue;
-      items.push({ m, done, st: `${c} of ${s.perWeek} this week` });
-    } else if (isDueFixed(m, todayKey)) items.push({ m, done, st: done ? "Done" : "Due" });
+      const wc = weekCount(m, todayKey);
+      if (wc >= s.perWeek && !c) continue;
+      items.push({ m, done, st: `${wc} of ${s.perWeek} this week${doseTxt}` });
+    } else if (isDueFixed(m, todayKey)) items.push({ m, done, st: (done ? "Done" : c ? "In progress" : "Due") + doseTxt });
   }
   document.getElementById("todayList").innerHTML = items.length
-    ? items.map(it => `<button class="tchip${it.done ? " done" : ""}" data-today="${esc(it.m.id)}" style="--mc:${it.m.color}" aria-label="${esc(it.m.name)}: ${it.st}. Tap to ${it.done ? "undo" : "mark as taken"}.">${mark(it.m, 22)}<span class="nm">${esc(it.m.name)}</span><span class="st">${it.done && it.st !== "Done" ? "✓ " : ""}${it.st}</span></button>`).join("")
-    : `<span class="none">${!meds.length ? "Tap the settings button at the top right to add your medications." : meds.some(m => m.schedule) ? "Nothing due today." : "Give a medication a schedule (settings button, then tap it) to see what's due."}</span>`;
+    ? items.map(it => `<button class="tchip${it.done ? " done" : ""}" data-today="${esc(it.m.id)}" style="--mc:${it.m.color}" aria-label="${esc(it.m.name)}: ${it.st}. Tap to ${it.done ? "undo" : "mark a dose"}.">${mark(it.m, 22)}<span class="nm">${esc(it.m.name)}</span><span class="st">${it.done && !it.st.startsWith("Done") ? "✓ " : ""}${it.st}</span></button>`).join("")
+    : `<span class="none">${!activeMeds().length ? "Tap the settings button at the top right to add your medications." : activeMeds().some(m => m.schedule) ? "Nothing due today." : "Give a medication a schedule (settings button, then tap it) to see what's due."}</span>`;
+  // last week's shortfalls for "times a week" medications
+  const short = weekResults(addDays(weekStart(todayKey), -7)).filter(r => r.c < r.target);
+  const lw = document.getElementById("lastWeek");
+  lw.hidden = !short.length;
+  lw.innerHTML = short.length ? "Last week: " + short.map(r => `<b>${esc(r.m.name)} ${r.c} of ${r.target}</b>`).join(", ") : "";
 }
 function renderTray() {
-  const tray = document.getElementById("tray");
-  tray.innerHTML = meds.map(m => `<button class="stamp" data-med="${esc(m.id)}" aria-pressed="${activeMed === m.id}" style="--mc:${m.color}">${mark(m, 22)}<span>${esc(m.name)}</span></button>`).join("")
+  const list = activeMeds();
+  if (activeMed && (!medById(activeMed) || medById(activeMed).archived)) activeMed = null;
+  document.getElementById("tray").innerHTML = list.map(m => `<button class="stamp" data-med="${esc(m.id)}" aria-pressed="${activeMed === m.id}" style="--mc:${m.color}">${mark(m, 20)}<span>${esc(m.name)}</span></button>`).join("")
     || `<button class="stamp" id="trayAdd" style="--mc:var(--accent)">+ Add medication</button>`;
-  const h = document.getElementById("hint");
-  h.innerHTML = activeMed && medById(activeMed)
+  document.getElementById("hint").innerHTML = activeMed
     ? `Tap days to mark <b>${esc(medById(activeMed).name)}</b>. Tap it again to stop.`
-    : meds.length ? "Tap a day to open it · pick one above to mark days fast" : "";
+    : list.length ? "Tap a day to open it · pick one above to mark days fast" : "";
 }
-function dayMarks(k) {
-  return meds.map(m => {
-    const st = statusFor(m, k);
-    if (st === "taken") return mark(m);
-    if (!st) return "";
-    return `<span class="gw${st === "missed" ? " missed" : ""}" style="color:${m.color}">${mark(m)}</span>`;
-  }).join("");
+function markFor(m, k) {
+  const st = statusFor(m, k), c = doseCount(m, k), max = perDay(m);
+  if (st === "taken") return max > 1 ? `<span class="part">${mark(m)}<span class="cntx">×${c}</span></span>` : mark(m);
+  if (st === "partial") return `<span class="part">${mark(m)}<sub>${c}/${max}</sub></span>`;
+  if (!st) return "";
+  return `<span class="gw${st === "missed" ? " missed" : ""}" style="color:${m.color}">${mark(m)}</span>`;
 }
+const dayMarks = k => meds.map(m => (m.archived && !isTaken(m, k)) ? "" : markFor(m, k)).join("");
 function dayLabel(k) {
-  const taken = meds.filter(m => isTaken(m, k)).map(m => m.name);
-  const due = meds.filter(m => !isTaken(m, k) && isDueFixed(m, k)).map(m => m.name);
+  const taken = meds.filter(m => isTaken(m, k)).map(m => m.name + (perDay(m) > 1 ? ` (${doseCount(m, k)} of ${perDay(m)})` : ""));
+  const due = activeMeds().filter(m => !isTaken(m, k) && isDueFixed(m, k)).map(m => m.name);
   const e = days[k];
   return `${fmtLong(k)}: ${taken.length ? "taken " + taken.join(", ") : "nothing logged"}${due.length ? (k < todayKey ? ". Missed: " : ". Due: ") + due.join(", ") : ""}${e && e.notes ? ". Note: " + e.notes : ""}`;
 }
@@ -437,7 +571,10 @@ function renderCal() {
         <span class="wdate"><small>${DOW[i]}</small><b>${parseKey(k).getDate()}</b></span>
         <span class="wbody">${marks ? `<span class="icons">${marks}</span>` : `<span class="empty">Nothing logged</span>`}${e && e.notes ? `<span class="note">${icon(NOTE)}<span>${esc(e.notes)}</span></span>` : ""}</span></button>`;
     }
-    cal.innerHTML = html + `</div>`;
+    html += `</div>`;
+    const wr = weekResults(s), inProgress = addDays(s, 6) >= todayKey;
+    if (wr.length) html += `<div class="wsum"><b>${inProgress ? "This week so far" : "This week"}</b>${wr.map(r => `<span class="${r.c >= r.target ? "ok" : inProgress ? "" : "short"}">${esc(r.m.name)} ${r.c} of ${r.target}${r.c >= r.target ? " ✓" : ""}</span>`).join("")}</div>`;
+    cal.innerHTML = html;
   } else {
     const d = parseKey(cursor), y = d.getFullYear(), mo = d.getMonth();
     const first = new Date(y, mo, 1).getDay(), count = new Date(y, mo + 1, 0).getDate();
@@ -449,12 +586,12 @@ function renderCal() {
     }
     cal.innerHTML = html + `</div>`;
   }
-  document.getElementById("key").innerHTML = meds.some(m => m.schedule && m.schedule.type !== "perweek")
+  document.getElementById("key").innerHTML = activeMeds().some(m => m.schedule && m.schedule.type !== "perweek")
     ? `<span class="gw">${icon({ shape: "pill", color: "currentColor" })}</span> Due <span class="gw missed">${icon({ shape: "pill", color: "currentColor" })}</span> Missed` : "";
 }
 
 // ---------- main events ----------
-document.getElementById("todayList").addEventListener("click", ev => { const b = ev.target.closest("[data-today]"); if (b) toggleDose(b.dataset.today, todayKey); });
+document.getElementById("todayList").addEventListener("click", ev => { const b = ev.target.closest("[data-today]"); if (b) stepDose(b.dataset.today, todayKey); });
 document.getElementById("tray").addEventListener("click", ev => {
   if (ev.target.closest("#trayAdd")) { openSheet("edit", null); return; }
   const b = ev.target.closest("[data-med]"); if (!b) return;
@@ -463,7 +600,7 @@ document.getElementById("tray").addEventListener("click", ev => {
 });
 document.getElementById("cal").addEventListener("click", ev => {
   const b = ev.target.closest("[data-k]"); if (!b) return;
-  if (activeMed && medById(activeMed)) { toggleDose(activeMed, b.dataset.k); return; }
+  if (activeMed && medById(activeMed)) { stepDose(activeMed, b.dataset.k); return; }
   openSheet("day", b.dataset.k, b);
 });
 document.querySelectorAll(".seg [data-view]").forEach(b => b.onclick = () => { prefs.view = b.dataset.view; savePrefs(); renderMain(); });
@@ -485,10 +622,9 @@ function openSheet(kind, arg, originEl) {
   sheet.className = "sheet" + (kind === "day" ? " zoom" : "");
   if (kind === "day" && originEl) {
     const r = originEl.getBoundingClientRect();
-    const ox = r.left + r.width / 2 - window.innerWidth / 2, oy = r.top + r.height / 2 - window.innerHeight / 2;
-    sheet.style.transformOrigin = `calc(50% + ${ox}px) calc(50% + ${oy}px)`;
+    sheet.style.transformOrigin = `calc(50% + ${r.left + r.width / 2 - window.innerWidth / 2}px) calc(50% + ${r.top + r.height / 2 - window.innerHeight / 2}px)`;
   } else sheet.style.transformOrigin = "";
-  renderSheet();
+  renderSheet(); sheet.scrollTop = 0;
   backdrop.hidden = false; sheet.hidden = false;
   document.body.classList.add("locked");
   requestAnimationFrame(() => { backdrop.classList.add("show"); sheet.classList.add("show"); });
@@ -503,10 +639,12 @@ function closeSheet() {
 }
 backdrop.onclick = closeSheet;
 document.addEventListener("keydown", ev => { if (ev.key === "Escape" && sheetKind) closeSheet(); });
+function go(kind, arg) { if (sheetKind === "day") flushNote(); sheetKind = kind; sheetArg = arg; renderSheet(); sheet.scrollTop = 0; }
 function renderSheet() {
   if (sheetKind === "day") renderDaySheet(sheetArg);
   else if (sheetKind === "manage") renderManage();
   else if (sheetKind === "edit") renderEditor(sheetArg);
+  else if (sheetKind === "summary") renderSummary(sheetArg);
 }
 
 // ----- day sheet -----
@@ -518,19 +656,43 @@ function flushNote() {
   const text = ta.value.trim(), k = noteKey;
   const e = days[k] || { meds: {}, notes: "" };
   if ((e.notes || "") === text) return;
-  e.notes = text; days[k] = e;
-  if (!text && (!e.meds || !Object.keys(e.meds).length)) delete days[k];
+  e.notes = text; setEntry(k, text || (e.meds && Object.keys(e.meds).length) ? e : null);
   save();
+}
+function lastBefore(m, k, field) {
+  const ks = Object.keys(days).filter(x => x < k && days[x].meds && days[x].meds[m.id] && days[x].meds[m.id][field]).sort();
+  return ks.length ? { k: ks[ks.length - 1], v: days[ks[ks.length - 1]].meds[m.id][field] } : null;
+}
+function suggestSite(m, k) {
+  const sites = m.sites || []; if (!sites.length) return null;
+  const last = lastBefore(m, k, "site");
+  if (!last) return sites[0];
+  const i = sites.indexOf(last.v);
+  return sites[(i + 1) % sites.length];
 }
 function renderDaySheet(k) {
   noteKey = k;
   const e = days[k] || {};
-  const rows = meds.map(m => {
-    const st = statusFor(m, k);
-    const pillText = st === "taken" ? "Taken" : st === "due" ? "Due" : st === "missed" ? "Missed" : "Not taken";
-    return `<button class="drow${st === "taken" ? " taken" : ""}" data-dmed="${esc(m.id)}" style="--mc:${m.color}" aria-pressed="${st === "taken"}">
-      <span class="mk">${mark(m, 32)}</span><span><b>${esc(m.name)}</b>${medLabel(m) ? `<small>${esc(medLabel(m))}</small>` : ""}</span><span class="pill ${st}">${pillText}</span></button>`;
+  const list = meds.filter(m => !m.archived || isTaken(m, k));
+  const rows = list.map(m => {
+    const st = statusFor(m, k), c = doseCount(m, k), max = perDay(m), d = dose(m, k);
+    const pillText = st === "taken" ? (max > 1 ? `${c} of ${max}` : "Taken") : st === "partial" ? `${c} of ${max}` : st === "due" ? "Due" : st === "missed" ? "Missed" : "Not taken";
+    let extra = "";
+    if (c > 0 && ((m.sites && m.sites.length) || m.trackDose)) {
+      const sug = suggestSite(m, k), last = lastBefore(m, k, "site");
+      const lastAmt = lastBefore(m, k, "amt");
+      const amt = d.amt != null ? d.amt : (lastAmt ? lastAmt.v : (m.dose || ""));
+      extra = `<div class="dextra">
+        ${m.sites && m.sites.length ? `<div class="sites" role="group" aria-label="Site">${m.sites.map(s => `<button data-site="${esc(s)}" data-smed="${esc(m.id)}" aria-pressed="${d.site === s}" class="${!d.site && s === sug ? "sugg" : ""}">${esc(s)}</button>`).join("")}</div>
+        <span class="xhint">${last ? `Last: ${esc(last.v)} on ${fmtShort(last.k)}` : "No site logged before"}${!d.site && sug ? ` · suggested next: ${esc(sug)}` : ""}</span>` : ""}
+        ${m.trackDose ? `<label class="amtrow"><span class="lbl">Dose</span><input data-amt="${esc(m.id)}" value="${esc(amt)}" placeholder="e.g. 2.5 mg" maxlength="20" inputmode="decimal"></label>` : ""}
+      </div>`;
+    }
+    return `<div class="dcard" style="--mc:${m.color}"><button class="drow${st === "taken" || st === "partial" ? " taken" : ""}${extra ? " hasx" : ""}${m.archived ? " arch" : ""}" data-dmed="${esc(m.id)}" aria-pressed="${c > 0}">
+      <span class="mk">${mark(m, 32)}</span><span><b>${esc(m.name)}</b><small>${esc(m.archived ? "Archived" : medLabel(m))}</small></span><span class="pill ${st}">${pillText}</span></button>${extra}</div>`;
   }).join("");
+  // Dose amounts typed here are saved on change; prefilled amounts count once the dose is marked
+  for (const m of list) { const d = dose(m, k); if (d && m.trackDose && d.amt == null) { const la = lastBefore(m, k, "amt"); const v = la ? la.v : (m.dose || ""); if (v) d.amt = v; } }
   const wk = parseKey(k);
   sheet.setAttribute("aria-label", fmtLong(k));
   sheet.innerHTML = `<div class="shead"><div><h2>${DOWL[wk.getDay()]}, ${wk.toLocaleDateString("en-US", { month: "long", day: "numeric" })}</h2><div class="sub">${k === todayKey ? "Today" : k < todayKey ? dayDiff(k, todayKey) + " days ago" : "In " + dayDiff(todayKey, k) + " days"} · tap a medication to mark it</div></div><button class="xbtn" data-close aria-label="Close">${XICON}</button></div>
@@ -541,44 +703,55 @@ function renderDaySheet(k) {
 
 // ----- manage sheet -----
 let mmsg = "";
+function medRow(m) {
+  const rt = remTimes(m);
+  return `<button class="mrow${m.archived ? " arch" : ""}" data-edit="${esc(m.id)}"><span class="mk">${mark(m, 28)}</span><span><b>${esc(m.name)}</b><small>${m.archived ? "Archived · history kept" : esc(medLabel(m) || "No schedule") + (m.remind && m.remind.on && m.schedule ? " · reminder " + rt.map(fmtTime).join(", ") : "")}</small></span><span class="chev">›</span></button>`;
+}
 function renderManage() {
   sheet.setAttribute("aria-label", "Medications");
+  const arch = meds.filter(m => m.archived);
+  const stale = remindersStale();
   sheet.innerHTML = `<div class="shead"><h2>Medications</h2><button class="xbtn" data-close aria-label="Close">${XICON}</button></div>
-    <div class="mlist">${meds.map(m => `<button class="mrow" data-edit="${esc(m.id)}"><span class="mk">${mark(m, 28)}</span><span><b>${esc(m.name)}</b><small>${esc(medLabel(m) || "No schedule")}${m.remind && m.remind.on ? " · reminder " + fmtTime(m.remind.time) : ""}</small></span><span class="chev">›</span></button>`).join("")}
-      <button class="mrow add" data-edit="">+ Add medication</button></div>
+    <div class="mlist">${activeMeds().map(medRow).join("")}<button class="mrow add" data-edit="">+ Add medication</button></div>
+    ${arch.length ? `<div class="msect"><span class="lbl">Archived</span><div class="mlist">${arch.map(medRow).join("")}</div></div>` : ""}
     <div class="msect">
-      <span class="lbl">Reminders</span>
-      <button class="btn" id="remindBtn">Add reminders to Calendar <span>›</span></button>
+      <span class="lbl">For appointments</span>
+      <button class="btn" id="summaryBtn">Monthly summary <span>›</span></button>
+      <span class="lbl" style="margin-top:8px">Reminders</span>
+      ${stale ? `<div class="inst"><b>Your reminders are out of date.</b> To replace them:<ol><li>In the Calendar app, tap <b>Calendars</b>, tap the ⓘ next to <b>Medications</b>, and choose <b>Delete Calendar</b>.</li><li>Come back here and tap <b>Add reminders to Calendar</b>, then choose <b>Add All</b> into a new calendar called Medications.</li></ol></div>` : ""}
+      <button class="btn${stale ? " primary" : ""}" id="remindBtn">Add reminders to Calendar <span>›</span></button>
       <span class="lbl" style="margin-top:8px">Backup</span>
       <button class="btn" id="backupBtn">Save a backup <span>›</span></button>
       <label class="btn">Restore a backup <span>›</span><input type="file" id="restoreFile" accept=".json,application/json"></label>
-      <span class="mmsg" id="mmsg">${esc(mmsg || "Your entries are stored only on this phone.")}</span>
+      <span class="mmsg" id="mmsg">${esc(mmsg || (prefs.lastBackup ? "Last backup: " + fmtShort(prefs.lastBackup) + ". " : "") + "Your entries are stored only on this phone.")}</span>
     </div>`;
 }
-const fmtTime = t => { const [h, m] = (t || "09:00").split(":").map(Number); return `${((h + 11) % 12) + 1}:${pad(m)} ${h < 12 ? "AM" : "PM"}`; };
 const setMsg = t => { mmsg = t; const el = document.getElementById("mmsg"); if (el) el.textContent = t; };
 
 // ----- editor sheet -----
 let ed = null;
+const remTimes = m => (m.remind && (m.remind.times && m.remind.times.length ? m.remind.times : [m.remind.time || "09:00"])) || ["09:00"];
 function renderEditor(id) {
   const m = id ? medById(id) : null;
   const used = new Set(meds.map(x => x.shape)), usedC = new Set(meds.map(x => x.color));
   const sc = (m && m.schedule) || { type: "none", days: [], perWeek: 3, on: 5, off: 2, start: todayKey };
-  const rm = (m && m.remind) || { on: false, time: "09:00" };
+  const rm = (m && m.remind) || { on: false };
+  const times = m ? remTimes(m) : ["09:00"];
   ed = {
-    id, name: m ? m.name : "", nick: m ? (m.nick || "") : "", show: m && m.show === "nick" ? "nick" : "icon", sched: m ? (m.sched || "") : "",
+    id, show: m && m.show === "nick" ? "nick" : "icon",
     shape: m ? m.shape : (Object.keys(SHAPES).find(s => s !== "note" && !used.has(s)) || "pill"),
     color: m ? m.color : (COLORS.find(c => !usedC.has(c)) || COLORS[0]),
-    type: sc.type || "none", days: (sc.days || []).slice(), perWeek: sc.perWeek || 3, on: sc.on || 5, off: sc.off || 2, start: sc.start || todayKey,
-    remind: !!rm.on, time: rm.time || "09:00", armed: false,
+    type: sc.type || "none", days: (sc.days || []).slice(), perDay: m ? perDay(m) : 1,
+    times: [0, 1, 2, 3].map(i => times[i] || ["09:00", "21:00", "13:00", "17:00"][i]), armed: false,
   };
   const opts = (arr, v) => arr.map(n => `<option value="${n}"${+v === n ? " selected" : ""}>${n}</option>`).join("");
   sheet.setAttribute("aria-label", m ? "Edit " + m.name : "Add a medication");
   sheet.innerHTML = `<div class="shead"><div><button class="backbtn" data-back>‹ Medications</button><h2>${m ? "Edit " + esc(m.name) : "Add a medication"}</h2></div><button class="xbtn" data-close aria-label="Close">${XICON}</button></div>
   <div class="ed">
+    ${m && m.archived ? `<div class="inst">This medication is archived. Its past doses still show on the calendar, but it's hidden everywhere else.</div>` : ""}
     <div class="row2">
-      <label class="field"><span class="lbl">Name</span><input id="edName" maxlength="40" placeholder="e.g. Progesterone" value="${esc(ed.name)}"></label>
-      <label class="field"><span class="lbl">Nickname (up to 6 letters)</span><input id="edNick" maxlength="6" placeholder="e.g. TC, Zep" value="${esc(ed.nick)}"></label>
+      <label class="field"><span class="lbl">Name</span><input id="edName" maxlength="40" placeholder="e.g. Progesterone" value="${esc(m ? m.name : "")}"></label>
+      <label class="field"><span class="lbl">Nickname (up to 6 letters)</span><input id="edNick" maxlength="6" placeholder="e.g. TC, Zep" value="${esc(m ? m.nick || "" : "")}"></label>
     </div>
     <div class="field"><span class="lbl">Show on calendar</span><div class="segc" id="edShow"><button data-show="icon">Icon</button><button data-show="nick">Nickname</button></div></div>
     <div class="sched">
@@ -588,24 +761,32 @@ function renderEditor(id) {
             <option value="none">No set schedule</option><option value="daily">Every day</option><option value="days">Certain days of the week</option>
             <option value="perweek">A number of times a week (any days)</option><option value="cycle">Days on, days off</option>
           </select></label>
-        <label class="field"><span class="lbl">Details (optional)</span><input id="edSched" maxlength="40" placeholder="e.g. calf, side stomach" value="${esc(ed.sched)}"></label>
+        <label class="field"><span class="lbl">Times a day</span><select id="edPerDay">${opts([1, 2, 3, 4], ed.perDay)}</select></label>
       </div>
       <div class="field" id="fDays"><span class="lbl">Which days</span><div class="daypick" id="edDays"></div></div>
-      <label class="field" id="fPerWeek"><span class="lbl">Times a week</span><select id="edPerWeek">${opts([1,2,3,4,5,6], ed.perWeek)}</select></label>
+      <label class="field" id="fPerWeek"><span class="lbl">Times a week</span><select id="edPerWeek">${opts([1, 2, 3, 4, 5, 6], sc.perWeek || 3)}</select></label>
       <div class="cyc" id="fCycle">
-        <label class="field"><span class="lbl">Days on</span><select id="edOn">${opts(Array.from({ length: 21 }, (_, i) => i + 1), ed.on)}</select></label>
-        <label class="field"><span class="lbl">Days off</span><select id="edOff">${opts(Array.from({ length: 21 }, (_, i) => i + 1), ed.off)}</select></label>
-        <label class="field"><span class="lbl">First "on" day</span><input type="date" id="edStart" value="${ed.start}"></label>
+        <label class="field"><span class="lbl">Days on</span><select id="edOn">${opts(Array.from({ length: 21 }, (_, i) => i + 1), sc.on || 5)}</select></label>
+        <label class="field"><span class="lbl">Days off</span><select id="edOff">${opts(Array.from({ length: 21 }, (_, i) => i + 1), sc.off || 2)}</select></label>
+        <label class="field"><span class="lbl">First "on" day</span><input type="date" id="edStart" value="${sc.start || todayKey}"></label>
       </div>
       <div class="field" id="fRemind"><span class="lbl">Reminder</span>
-        <div class="remrow"><label class="chk"><input type="checkbox" id="edRemind"${ed.remind ? " checked" : ""}> Remind me at</label><input type="time" id="edTime" value="${ed.time}"></div>
+        <label class="chk"><input type="checkbox" id="edRemind"${rm.on ? " checked" : ""}> Remind me at</label>
+        <div class="timesrow" id="edTimes"></div>
       </div>
+    </div>
+    <label class="field"><span class="lbl">Details (optional)</span><input id="edSched" maxlength="40" placeholder="e.g. calf, with food" value="${esc(m ? m.sched || "" : "")}"></label>
+    <label class="field"><span class="lbl">Sites to rotate (optional, separate with commas)</span><input id="edSites" maxlength="200" placeholder="e.g. Left thigh, Right thigh, Left arm" value="${esc(m && m.sites ? m.sites.join(", ") : "")}"></label>
+    <div class="row2">
+      <div class="field"><span class="lbl">Track dose amount</span><label class="chk"><input type="checkbox" id="edTrack"${m && m.trackDose ? " checked" : ""}> Ask for the dose when I mark it</label></div>
+      <label class="field" id="fDose"><span class="lbl">Usual dose</span><input id="edDose" maxlength="20" placeholder="e.g. 2.5 mg" value="${esc(m ? m.dose || "" : "")}"></label>
     </div>
     <div class="field"><span class="lbl">Icon</span><div class="picks" id="edShapes"></div></div>
     <div class="field"><span class="lbl">Color</span><div class="picks" id="edColors"></div></div>
     <div class="sfoot" style="align-items:center">
       <span class="preview" id="edPreview"></span>
-      ${m ? `<button class="btn danger" id="edRemove">Remove</button>` : ""}
+      ${m && !m.archived ? `<button class="btn" id="edArchive">Archive</button>` : ""}
+      ${m && m.archived ? `<button class="btn danger" id="edDelete">Delete forever</button><button class="btn" id="edRestore">Restore</button>` : ""}
       <button class="btn primary" id="edSave">Save</button>
       <span class="err" id="edErr"></span>
     </div>
@@ -614,71 +795,168 @@ function renderEditor(id) {
   edRefresh();
 }
 function edRefresh() {
-  const nick = document.getElementById("edNick").value.trim();
-  ed.type = document.getElementById("edFreq").value;
-  document.getElementById("fDays").hidden = ed.type !== "days";
-  document.getElementById("fPerWeek").hidden = ed.type !== "perweek";
-  document.getElementById("fCycle").hidden = ed.type !== "cycle";
-  document.getElementById("fRemind").hidden = ed.type === "none";
-  document.getElementById("edDays").innerHTML = DOW.map((d, i) => `<button data-dow="${i}" aria-label="${DOWL[i]}" aria-pressed="${ed.days.includes(i)}">${d[0]}</button>`).join("");
+  const $ = id => document.getElementById(id);
+  const nick = $("edNick").value.trim();
+  ed.type = $("edFreq").value;
+  ed.perDay = +$("edPerDay").value;
+  $("fDays").hidden = ed.type !== "days";
+  $("fPerWeek").hidden = ed.type !== "perweek";
+  $("fCycle").hidden = ed.type !== "cycle";
+  $("fRemind").hidden = ed.type === "none";
+  $("fDose").hidden = !$("edTrack").checked;
+  $("edDays").innerHTML = DOW.map((d, i) => `<button data-dow="${i}" aria-label="${DOWL[i]}" aria-pressed="${ed.days.includes(i)}">${d[0]}</button>`).join("");
+  // keep typed times when re-rendering
+  document.querySelectorAll("#edTimes input").forEach((inp, i) => ed.times[i] = inp.value || ed.times[i]);
+  $("edTimes").innerHTML = ed.times.slice(0, ed.perDay).map((t, i) => `<input type="time" data-ti="${i}" value="${t}" aria-label="Reminder time ${i + 1}" style="border:1px solid var(--line);border-radius:10px;padding:6px 10px;font:inherit;background:var(--surface);color:var(--ink)">`).join("");
   const showNow = nick && ed.show === "nick" ? "nick" : "icon";
   document.querySelector('#edShow [data-show="nick"]').disabled = !nick;
   document.querySelectorAll("#edShow [data-show]").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.show === showNow)));
-  document.getElementById("edShapes").innerHTML = Object.keys(SHAPES).filter(s => s !== "note").map(s => `<button data-shape="${s}" aria-label="${s} icon" aria-pressed="${s === ed.shape}">${icon({ shape: s, color: ed.color })}</button>`).join("");
-  document.getElementById("edColors").innerHTML = COLORS.map(c => `<button class="sw" data-color="${c}" aria-label="Color ${c}" aria-pressed="${c === ed.color}" style="background:${c}"></button>`).join("");
-  const name = document.getElementById("edName").value.trim() || "Preview";
-  document.getElementById("edPreview").innerHTML = `${mark({ shape: ed.shape, color: ed.color, nick, show: showNow }, 30)}<span>${esc(name)}</span>`;
+  $("edShapes").innerHTML = Object.keys(SHAPES).filter(s => s !== "note").map(s => `<button data-shape="${s}" aria-label="${s} icon" aria-pressed="${s === ed.shape}">${icon({ shape: s, color: ed.color })}</button>`).join("");
+  $("edColors").innerHTML = COLORS.map(c => `<button class="sw" data-color="${c}" aria-label="Color ${c}" aria-pressed="${c === ed.color}" style="background:${c}"></button>`).join("");
+  $("edPreview").innerHTML = `${mark({ shape: ed.shape, color: ed.color, nick, show: showNow }, 30)}<span>${esc($("edName").value.trim() || "Preview")}</span>`;
 }
 function edSave() {
   const $ = id => document.getElementById(id);
   const name = $("edName").value.trim();
   if (!name) { $("edErr").textContent = "Give the medication a name."; return; }
   if (ed.type === "days" && !ed.days.length) { $("edErr").textContent = "Pick at least one day."; return; }
+  document.querySelectorAll("#edTimes input").forEach((inp, i) => ed.times[i] = inp.value || ed.times[i]);
   const nick = $("edNick").value.trim();
-  const show = nick && ed.show === "nick" ? "nick" : "icon";
   const prev = ed.id ? medById(ed.id).schedule : null;
   const schedule = ed.type === "none" ? null : {
     type: ed.type, days: ed.days.slice().sort(), perWeek: +$("edPerWeek").value,
     on: +$("edOn").value, off: +$("edOff").value, start: $("edStart").value || todayKey,
     since: (prev && prev.since) || todayKey,
   };
-  const remind = { on: $("edRemind").checked && !!schedule, time: $("edTime").value || "09:00" };
-  const fields = { name, nick, show, sched: $("edSched").value.trim(), schedule, remind, shape: ed.shape, color: ed.color };
+  const times = ed.times.slice(0, ed.perDay);
+  const fields = {
+    name, nick, show: nick && ed.show === "nick" ? "nick" : "icon", sched: $("edSched").value.trim(), schedule,
+    remind: { on: $("edRemind").checked && !!schedule, time: times[0], times },
+    perDay: ed.perDay, sites: $("edSites").value.split(",").map(s => s.trim()).filter(Boolean),
+    trackDose: $("edTrack").checked, dose: $("edDose").value.trim(), shape: ed.shape, color: ed.color,
+  };
   if (ed.id) Object.assign(medById(ed.id), fields);
   else meds.push(Object.assign({ id: "m" + Date.now().toString(36) }, fields));
-  save(); sheetKind = "manage"; renderSheet();
+  save(); go("manage");
+}
+
+// ----- monthly summary -----
+function monthStats(m, y, mo) {
+  const first = keyOf(new Date(y, mo, 1)), last = keyOf(new Date(y, mo + 1, 0));
+  const end = last < todayKey ? last : addDays(todayKey, -1);
+  let takenDays = 0, doses = 0, due = 0, dueTaken = 0, partial = 0;
+  const sites = {}, amts = [];
+  for (let k = first; k <= last; k = addDays(k, 1)) {
+    const c = doseCount(m, k);
+    if (c) { takenDays++; doses += c; const d = dose(m, k); if (d.site) sites[d.site] = (sites[d.site] || 0) + 1; if (d.amt && (!amts.length || amts[amts.length - 1].v !== d.amt)) amts.push({ k, v: d.amt }); }
+    if (k <= end && isDueFixed(m, k)) { due++; if (c >= perDay(m)) dueTaken++; else if (c) partial++; }
+  }
+  let weeks = null;
+  if (m.schedule && m.schedule.type === "perweek") {
+    weeks = [];
+    for (let s = weekStart(first); s <= last; s = addDays(s, 7)) {
+      if (addDays(s, 6) >= todayKey) break;
+      if (m.schedule.since && addDays(s, 6) < m.schedule.since) continue;
+      weeks.push({ s, c: weekCount(m, s), t: m.schedule.perWeek });
+    }
+  }
+  return { takenDays, doses, due, dueTaken, partial, missed: due - dueTaken - partial, sites, amts, weeks };
+}
+function summaryData(y, mo) {
+  const rows = meds.map(m => ({ m, st: monthStats(m, y, mo) })).filter(r => !r.m.archived || r.st.takenDays);
+  const first = keyOf(new Date(y, mo, 1)), last = keyOf(new Date(y, mo + 1, 0));
+  const notes = Object.keys(days).filter(k => k >= first && k <= last && days[k].notes).sort().map(k => ({ k, t: days[k].notes }));
+  return { rows, notes };
+}
+function renderSummary(arg) {
+  const d = parseKey(arg || keyOf(new Date(parseKey(cursor).getFullYear(), parseKey(cursor).getMonth(), 1)));
+  const y = d.getFullYear(), mo = d.getMonth();
+  sheetArg = keyOf(new Date(y, mo, 1));
+  const { rows, notes } = summaryData(y, mo);
+  const monthName = d.toLocaleString("en-US", { month: "long", year: "numeric" });
+  const card = ({ m, st }) => {
+    const pct = st.due ? Math.round(st.dueTaken / st.due * 100) : null;
+    const wk = st.weeks && st.weeks.length ? `${st.weeks.filter(w => w.c >= w.t).length} of ${st.weeks.length} full weeks on target` : "";
+    return `<div class="scard"><div class="sh">${mark(m, 26)}<b>${esc(m.name)}</b>${pct != null ? `<span class="pct${pct < 80 ? " low" : ""}">${pct}%</span>` : ""}</div>
+      <dl><dt>Schedule</dt><dd>${esc(medLabel(m) || "No set schedule")}</dd>
+      <dt>Days taken</dt><dd>${st.takenDays}${perDay(m) > 1 ? ` (${st.doses} doses)` : ""}</dd>
+      ${st.due ? `<dt>Missed</dt><dd>${st.missed} of ${st.due} scheduled days${st.partial ? `, ${st.partial} partly taken` : ""}</dd>` : ""}
+      ${wk ? `<dt>Weekly goal</dt><dd>${wk}</dd>` : ""}
+      ${st.amts.length ? `<dt>Dose</dt><dd>${st.amts.map(a => esc(a.v) + (st.amts.length > 1 ? " from " + fmtShort(a.k) : "")).join(", ")}</dd>` : ""}
+      ${Object.keys(st.sites).length ? `<dt>Sites</dt><dd>${Object.entries(st.sites).map(([s, n]) => esc(s) + " ×" + n).join(", ")}</dd>` : ""}</dl></div>`;
+  };
+  sheet.setAttribute("aria-label", "Summary for " + monthName);
+  sheet.innerHTML = `<div class="shead"><div><button class="backbtn" data-back>‹ Medications</button><h2>${monthName}</h2><div class="sub">Summary for appointments</div></div><button class="xbtn" data-close aria-label="Close">${XICON}</button></div>
+    <div class="sumhead"><div class="nav"><button data-sm="-1" aria-label="Previous month">‹</button><button data-sm="1" aria-label="Next month">›</button></div><span style="flex:1"></span><button class="btn primary" id="shareSum">Share</button></div>
+    ${rows.length ? rows.map(card).join("") : `<p class="empty-note">No medications to summarize.</p>`}
+    ${notes.length ? `<div class="snotes"><span class="lbl">Notes</span>${notes.map(n => `<div><span>${fmtShort(n.k)}</span><p style="margin:0">${esc(n.t)}</p></div>`).join("")}</div>` : ""}
+    <p class="xhint" style="margin-top:12px">Percent is scheduled days fully taken, through yesterday.</p>`;
+}
+function summaryText(y, mo) {
+  const { rows, notes } = summaryData(y, mo);
+  const L = [`Medication summary: ${new Date(y, mo, 1).toLocaleString("en-US", { month: "long", year: "numeric" })}`, ""];
+  for (const { m, st } of rows) {
+    L.push(m.name + (medLabel(m) ? ` (${medLabel(m)})` : ""));
+    L.push(`  Days taken: ${st.takenDays}${perDay(m) > 1 ? ` (${st.doses} doses)` : ""}`);
+    if (st.due) L.push(`  Missed: ${st.missed} of ${st.due} scheduled days${st.partial ? `, ${st.partial} partly taken` : ""} (${Math.round(st.dueTaken / st.due * 100)}% fully taken)`);
+    if (st.weeks && st.weeks.length) L.push(`  Weekly goal met: ${st.weeks.filter(w => w.c >= w.t).length} of ${st.weeks.length} weeks`);
+    if (st.amts.length) L.push(`  Dose: ${st.amts.map(a => a.v + (st.amts.length > 1 ? " from " + fmtShort(a.k) : "")).join(", ")}`);
+    if (Object.keys(st.sites).length) L.push(`  Sites: ${Object.entries(st.sites).map(([s, n]) => s + " x" + n).join(", ")}`);
+    L.push("");
+  }
+  if (notes.length) { L.push("Notes"); for (const n of notes) L.push(`  ${fmtShort(n.k)}: ${n.t}`); }
+  return L.join("\n");
+}
+async function shareSummary() {
+  const d = parseKey(sheetArg), text = summaryText(d.getFullYear(), d.getMonth());
+  try { if (navigator.share) { await navigator.share({ title: "Medication summary", text }); return; } } catch (e) { if (e && e.name === "AbortError") return; }
+  try { await navigator.clipboard.writeText(text); toast("Summary copied"); } catch (e) { toast("Couldn't share on this device"); }
 }
 
 // ----- sheet events -----
 sheet.addEventListener("click", ev => {
   const t = ev.target;
   if (t.closest("[data-close]")) { closeSheet(); return; }
+  if (t.closest("[data-back]")) { go("manage"); return; }
   if (sheetKind === "day") {
+    const s = t.closest("[data-site]");
+    if (s) { const d = days[sheetArg].meds[s.dataset.smed]; d.site = d.site === s.dataset.site ? "" : s.dataset.site; save(true); toast("Site saved"); renderDaySheet(sheetArg); renderMain(); return; }
     const r = t.closest("[data-dmed]");
-    if (r) { flushNote(); toggleDose(r.dataset.dmed, sheetArg); renderDaySheet(sheetArg); }
+    if (r) { flushNote(); stepDose(r.dataset.dmed, sheetArg, { after: () => { if (sheetKind === "day") renderDaySheet(sheetArg); } }); }
     return;
   }
   if (sheetKind === "manage") {
     const e = t.closest("[data-edit]");
-    if (e) { sheetKind = "edit"; sheetArg = e.dataset.edit || null; renderSheet(); sheet.scrollTop = 0; return; }
+    if (e) { go("edit", e.dataset.edit || null); return; }
+    if (t.closest("#summaryBtn")) { go("summary", null); return; }
     if (t.closest("#remindBtn")) { exportReminders(); return; }
     if (t.closest("#backupBtn")) { saveBackup(); return; }
     return;
   }
+  if (sheetKind === "summary") {
+    const n = t.closest("[data-sm]");
+    if (n) { const d = parseKey(sheetArg); renderSummary(keyOf(new Date(d.getFullYear(), d.getMonth() + +n.dataset.sm, 1))); return; }
+    if (t.closest("#shareSum")) shareSummary();
+    return;
+  }
   if (sheetKind === "edit") {
-    if (t.closest("[data-back]")) { sheetKind = "manage"; renderSheet(); return; }
     const d = t.closest("[data-dow]"); if (d) { const i = +d.dataset.dow; ed.days = ed.days.includes(i) ? ed.days.filter(x => x !== i) : [...ed.days, i]; edRefresh(); return; }
     const sh = t.closest("[data-shape]"); if (sh) { ed.shape = sh.dataset.shape; edRefresh(); return; }
     const co = t.closest("[data-color]"); if (co) { ed.color = co.dataset.color; edRefresh(); return; }
     const sw = t.closest("[data-show]"); if (sw && !sw.disabled) { ed.show = sw.dataset.show; edRefresh(); return; }
     if (t.closest("#edSave")) { edSave(); return; }
-    const rmb = t.closest("#edRemove");
-    if (rmb) {
-      if (!ed.armed) { ed.armed = true; rmb.classList.add("confirm"); rmb.textContent = "Tap again to remove"; return; }
+    if (t.closest("#edArchive")) {
+      const m = medById(ed.id); m.archived = true; if (activeMed === m.id) activeMed = null;
+      save(true); renderMain(); toast(`Archived ${m.name}`, () => { m.archived = false; save(true); renderMain(); if (sheetKind === "manage") renderManage(); });
+      go("manage"); return;
+    }
+    if (t.closest("#edRestore")) { medById(ed.id).archived = false; save(); go("manage"); return; }
+    const del = t.closest("#edDelete");
+    if (del) {
+      if (!ed.armed) { ed.armed = true; del.classList.add("confirm"); del.textContent = "Tap again: erases all its history"; return; }
       meds = meds.filter(m => m.id !== ed.id);
-      for (const k of Object.keys(days)) if (days[k].meds) delete days[k].meds[ed.id];
-      if (activeMed === ed.id) activeMed = null;
-      save(); sheetKind = "manage"; renderSheet();
+      for (const k of Object.keys(days)) { if (days[k].meds) { delete days[k].meds[ed.id]; if (!Object.keys(days[k].meds).length && !days[k].notes) delete days[k]; } }
+      save(); go("manage");
     }
   }
 });
@@ -687,20 +965,23 @@ sheet.addEventListener("input", ev => {
   if (sheetKind === "edit" && (ev.target.id === "edName" || ev.target.id === "edNick")) edRefresh();
 });
 sheet.addEventListener("change", ev => {
-  if (sheetKind === "edit" && ev.target.id === "edFreq") edRefresh();
-  if (sheetKind === "manage" && ev.target.id === "restoreFile") restoreBackup(ev.target);
+  const t = ev.target;
+  if (sheetKind === "edit" && ["edFreq", "edPerDay", "edTrack"].includes(t.id)) edRefresh();
+  if (sheetKind === "manage" && t.id === "restoreFile") restoreBackup(t);
+  if (sheetKind === "day" && t.dataset.amt) { const d = dose(medById(t.dataset.amt), sheetArg); if (d) { d.amt = t.value.trim(); save(true); toast("Dose saved"); } }
 });
 
 // ---------- backup ----------
+function backupDone(msg) { prefs.lastBackup = todayKey; prefs.snooze = null; savePrefs(); setMsg(msg); renderBanners(); toast(msg); }
 async function saveBackup() {
   const text = JSON.stringify({ version: 2, days, meds }, null, 2);
   const name = "medication-log-" + todayKey + ".json";
   try {
     const file = new File([text], name, { type: "application/json" });
-    if (navigator.canShare && navigator.canShare({ files: [file] })) { await navigator.share({ files: [file], title: "Medication log backup" }); setMsg("Backup ready. Save it to Files or send it to yourself."); return; }
+    if (navigator.canShare && navigator.canShare({ files: [file] })) { await navigator.share({ files: [file], title: "Medication log backup" }); backupDone("Backup ready. Save it to Files or send it to yourself."); return; }
   } catch (e) { if (e && e.name === "AbortError") return; }
   downloadText(text, name, "application/json");
-  setMsg("Backup saved to Downloads.");
+  backupDone("Backup saved to Downloads.");
 }
 function restoreBackup(input) {
   const f = input.files[0]; if (!f) return;
@@ -731,16 +1012,18 @@ function firstOnOrAfter(k, dl) { for (let i = 0; i < 7; i++) { const d = addDays
 function buildICS() {
   const stamp = new Date().toISOString().replace(/[-:]/g, "").replace(/\.\d+/, "");
   const ev = [];
-  for (const m of meds) {
+  for (const m of activeMeds()) {
     if (!m.remind || !m.remind.on || !m.schedule) continue;
-    const s = m.schedule, t = m.remind.time || "09:00";
-    const title = "Take " + m.name + (m.sched ? " (" + m.sched + ")" : "");
-    const push = (uid, start, rule, desc) => ev.push(["BEGIN:VEVENT", "UID:" + uid + "@medcalendar", "DTSTAMP:" + stamp, "DTSTART:" + icsDate(start, t), "DURATION:PT15M", "RRULE:" + rule, "SUMMARY:" + icsEsc(title), "DESCRIPTION:" + icsEsc(desc), "BEGIN:VALARM", "ACTION:DISPLAY", "DESCRIPTION:" + icsEsc(title), "TRIGGER:PT0M", "END:VALARM", "END:VEVENT"].join("\r\n"));
-    const from = todayKey > (s.since || todayKey) ? todayKey : (s.since || todayKey);
-    if (s.type === "daily") push(m.id + "-d", from, "FREQ=DAILY", "Every day");
-    else if (s.type === "days") push(m.id + "-w", firstOnOrAfter(from, s.days), "FREQ=WEEKLY;BYDAY=" + s.days.map(d => BYDAY[d]).join(","), schedText(m));
-    else if (s.type === "perweek") { const dl = SPREAD[s.perWeek] || [1]; push(m.id + "-p", firstOnOrAfter(from, dl), "FREQ=WEEKLY;BYDAY=" + dl.map(d => BYDAY[d]).join(","), schedText(m) + ", on any days you like"); }
-    else if (s.type === "cycle") for (let i = 0; i < s.on; i++) push(m.id + "-c" + i, addDays(s.start, i), "FREQ=DAILY;INTERVAL=" + (s.on + s.off), schedText(m));
+    const s = m.schedule;
+    remTimes(m).forEach((t, ti) => {
+      const title = "Take " + m.name + (m.sched ? " (" + m.sched + ")" : "");
+      const push = (uid, start, rule, desc) => ev.push(["BEGIN:VEVENT", "UID:" + uid + "-t" + ti + "@medcalendar", "DTSTAMP:" + stamp, "DTSTART:" + icsDate(start, t), "DURATION:PT15M", "RRULE:" + rule, "SUMMARY:" + icsEsc(title), "DESCRIPTION:" + icsEsc(desc), "BEGIN:VALARM", "ACTION:DISPLAY", "DESCRIPTION:" + icsEsc(title), "TRIGGER:PT0M", "END:VALARM", "END:VEVENT"].join("\r\n"));
+      const from = todayKey > (s.since || todayKey) ? todayKey : (s.since || todayKey);
+      if (s.type === "daily") push(m.id + "-d", from, "FREQ=DAILY", "Every day");
+      else if (s.type === "days") push(m.id + "-w", firstOnOrAfter(from, s.days), "FREQ=WEEKLY;BYDAY=" + s.days.map(d => BYDAY[d]).join(","), schedText(m));
+      else if (s.type === "perweek") { const dl = SPREAD[s.perWeek] || [1]; push(m.id + "-p", firstOnOrAfter(from, dl), "FREQ=WEEKLY;BYDAY=" + dl.map(d => BYDAY[d]).join(","), schedText(m) + ", on any days you like"); }
+      else if (s.type === "cycle") for (let i = 0; i < s.on; i++) push(m.id + "-c" + i, addDays(s.start, i), "FREQ=DAILY;INTERVAL=" + (s.on + s.off), schedText(m));
+    });
   }
   if (!ev.length) return null;
   return ["BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//Medication Calendar//EN", "CALSCALE:GREGORIAN", "X-WR-CALNAME:Medications", ...ev, "END:VCALENDAR", ""].join("\r\n");
@@ -749,7 +1032,9 @@ function exportReminders() {
   const ics = buildICS();
   if (!ics) { setMsg("Turn on a reminder first: tap a medication above, set how often, and check Remind me."); return; }
   downloadText(ics, "medication-reminders.ics", "text/calendar");
+  prefs.remSig = remSig(); savePrefs();
   setMsg("Open the file and choose Add All to put the reminders in your Calendar.");
+  renderManage(); renderBanners();
 }
 
 if ("serviceWorker" in navigator) window.addEventListener("load", () => navigator.serviceWorker.register("sw.js").catch(() => {}));
