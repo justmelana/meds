@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Med Calendar">
 <meta name="theme-color" content="#5a4fcf">
 <link rel="manifest" href="manifest.webmanifest">
@@ -13,246 +13,259 @@
 <link rel="icon" href="icon-192.png">
 <title>Medication Calendar</title>
 <style>
-/* Layout: medication buttons across the top, full-width month grid below, add/edit form opens between them. */
+/* Layout: gradient page; compact top bar, Today card, one-row medication tray, calendar card. Day view and Medications open as sheets over the calendar. */
 :root {
   --bg: #ece8fb;
+  --bg-end: #f2a98a;
   --bg-grad: linear-gradient(160deg, #5a4fcf 0%, #8a63d2 34%, #c97fb8 68%, #f2a98a 100%);
   --on-bg: #ffffff;
-  --bg-end: #f2a98a;
   --on-bg-muted: rgba(255,255,255,.82);
   --surface: #ffffff;
   --ink: #1d2433;
   --muted: #667089;
-  --line: #dde2ec;
-  --accent: #3a4fd6;
-  --today: #e7ebff;
-  --chip: #eef1f7;
+  --line: #e2e5ee;
+  --accent: #4b45c8;
+  --chip: #f1f0fa;
   --danger: #c23b3b;
+  --shadow: 0 4px 18px rgb(30 20 80 / .16);
   --font-display: "Avenir Next", "Segoe UI", system-ui, sans-serif;
   --font-body: -apple-system, "Segoe UI", system-ui, sans-serif;
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --bg: #141226; --bg-grad: linear-gradient(160deg, #1f1a4d 0%, #36265e 45%, #4a2445 100%); --bg-end: #4a2445; --on-bg: #f1eefc; --on-bg-muted: rgba(241,238,252,.75); --surface: #1b202b; --ink: #e8ebf3; --muted: #98a1b8; --line: #2c3342;
-    --accent: #8d9cff; --today: #262e4a; --chip: #252b38; --danger: #ff7b7b; color-scheme: dark;
+    --bg: #141226; --bg-end: #4a2445; --bg-grad: linear-gradient(160deg, #1f1a4d 0%, #36265e 45%, #4a2445 100%);
+    --on-bg: #f1eefc; --on-bg-muted: rgba(241,238,252,.75);
+    --surface: #1d1f2c; --ink: #e8ebf3; --muted: #9aa2b8; --line: #2f3446; --accent: #9aa2ff; --chip: #262a3a; --danger: #ff7b7b;
+    --shadow: 0 4px 18px rgb(0 0 0 / .35); color-scheme: dark;
   }
 }
 :root[data-theme="dark"] {
-  --bg: #141226; --bg-grad: linear-gradient(160deg, #1f1a4d 0%, #36265e 45%, #4a2445 100%); --bg-end: #4a2445; --on-bg: #f1eefc; --on-bg-muted: rgba(241,238,252,.75); --surface: #1b202b; --ink: #e8ebf3; --muted: #98a1b8; --line: #2c3342;
-  --accent: #8d9cff; --today: #262e4a; --chip: #252b38; --danger: #ff7b7b; color-scheme: dark;
+  --bg: #141226; --bg-end: #4a2445; --bg-grad: linear-gradient(160deg, #1f1a4d 0%, #36265e 45%, #4a2445 100%);
+  --on-bg: #f1eefc; --on-bg-muted: rgba(241,238,252,.75);
+  --surface: #1d1f2c; --ink: #e8ebf3; --muted: #9aa2b8; --line: #2f3446; --accent: #9aa2ff; --chip: #262a3a; --danger: #ff7b7b;
+  --shadow: 0 4px 18px rgb(0 0 0 / .35); color-scheme: dark;
 }
 * { box-sizing: border-box; }
-html, body { margin: 0; }
 [hidden] { display: none !important; }
 html { background: var(--bg-end); min-height: 100%; }
-body { background: var(--bg-grad); background-color: var(--bg); min-height: 100vh; }
-header h1 { color: var(--on-bg); }
-header .sub, .hint, .backup > span, .status { color: var(--on-bg-muted) !important; }
-.hint b { color: var(--on-bg) !important; }
-.legend .tool { background: rgba(255,255,255,.18) !important; color: var(--on-bg) !important; border-color: rgba(255,255,255,.55) !important; }
-.legend .tool.on { background: var(--surface) !important; color: var(--accent) !important; border-style: solid !important; }
-.nav button, .backup .btn { box-shadow: 0 2px 6px rgb(30 20 80 / .18); border-color: transparent; }
-.legend > button.med, .cal, .editor, .notebox { box-shadow: 0 4px 16px rgb(30 20 80 / .16); border-color: transparent; }
-body { color: var(--ink); font-family: var(--font-body); font-size: 15px; line-height: 1.45; }
-.wrap { max-width: 1120px; margin: 0 auto; padding-inline: max(16px, env(safe-area-inset-left)) max(16px, env(safe-area-inset-right)); padding-block: calc(16px + env(safe-area-inset-top)) calc(32px + env(safe-area-inset-bottom)); }
-body { -webkit-tap-highlight-color: transparent; }
-@media (max-width: 520px) {
-  .legend > button { padding: 6px 10px 6px 6px; font-size: 12.5px; }
-  .legend .lg i { font-size: 11px; }
-  .sub { font-size: 13.5px; }
-  .notebox .spacer { visibility: hidden; }
-}
-.backup { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 18px; font-size: 12.5px; color: var(--muted); }
-.backup .btn { font-size: 13px; padding: 6px 14px; }
-.backup label.btn { display: inline-block; }
-.backup input { display: none; }
-header { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 12px; margin-bottom: 16px; }
-h1 { font-family: var(--font-display); font-weight: 700; font-size: clamp(1.6rem, 4vw, 2.2rem); margin: 0; letter-spacing: -0.01em; }
-.sub { color: var(--muted); margin: 2px 0 0; }
+html, body { margin: 0; }
+body { background: var(--bg-grad); background-color: var(--bg); min-height: 100vh; color: var(--ink); font-family: var(--font-body); font-size: 15px; line-height: 1.4; -webkit-tap-highlight-color: transparent; }
+body.locked { overflow: hidden; }
+button { font: inherit; color: inherit; }
+button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.wrap { max-width: 960px; margin: 0 auto; padding-inline: max(14px, env(safe-area-inset-left)) max(14px, env(safe-area-inset-right)); padding-block: calc(12px + env(safe-area-inset-top)) calc(28px + env(safe-area-inset-bottom)); display: grid; gap: 12px; }
+
+/* top bar */
+.top { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.top h1 { font-family: var(--font-display); font-weight: 700; font-size: clamp(1.45rem, 5.5vw, 2rem); margin: 0; color: var(--on-bg); letter-spacing: -0.01em; }
+.iconbtn { width: 40px; height: 40px; border-radius: 50%; border: none; background: rgba(255,255,255,.2); color: var(--on-bg); display: grid; place-items: center; cursor: pointer; flex: none; }
+.iconbtn svg { width: 22px; height: 22px; }
+.controls { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
 .nav { display: flex; align-items: center; gap: 6px; }
-.nav button { width: 36px; height: 36px; border-radius: 50%; border: 1px solid var(--line); background: var(--surface); color: var(--ink); font-size: 18px; cursor: pointer; }
-.nav button:hover { border-color: var(--accent); }
-.nav .today-btn { width: auto; border-radius: 999px; padding: 0 14px; font: inherit; font-size: 14px; font-weight: 600; }
-button:focus-visible, input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.nav button { height: 36px; min-width: 36px; border-radius: 999px; border: none; background: var(--surface); color: var(--ink); box-shadow: var(--shadow); cursor: pointer; font-size: 17px; padding: 0 10px; }
+.nav .todaybtn { font-size: 14px; font-weight: 600; padding: 0 14px; }
+.seg { display: inline-flex; background: rgba(255,255,255,.2); border-radius: 999px; padding: 3px; }
+.seg button { border: none; background: transparent; color: var(--on-bg); padding: 6px 14px; border-radius: 999px; font-size: 14px; font-weight: 600; cursor: pointer; }
+.seg button[aria-pressed="true"] { background: var(--surface); color: var(--accent); }
 
-.legend { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 10px; }
-.legend > button { display: inline-flex; align-items: center; gap: 8px; font: inherit; font-size: 13px; text-align: left; background: var(--surface); color: var(--ink); border: 1.5px solid var(--line); border-radius: 12px; padding: 8px 12px 8px 8px; cursor: pointer; }
-.legend > button.med:hover { border-color: var(--mc); }
-.legend > button.med[aria-pressed="true"] { border-color: var(--mc); background: color-mix(in srgb, var(--mc) 14%, var(--surface)); box-shadow: 0 0 0 2px var(--mc); }
-.legend.editing > button.med { border-style: dashed; }
-.legend .lg { display: flex; flex-direction: column; line-height: 1.25; }
-.legend .lg b { font-weight: 600; }
-.legend .lg i { font-style: normal; color: var(--muted); font-size: 12px; }
-.legend .tool { border-style: dashed; color: var(--muted); font-weight: 600; padding: 8px 14px; }
-.legend .tool:hover { color: var(--ink); border-color: var(--accent); }
-.legend .tool.on { border-style: solid; border-color: var(--accent); color: var(--accent); }
-.hint { font-size: 13.5px; color: var(--muted); margin: 0 0 12px; min-height: 1.3em; }
-.hint b { color: var(--ink); }
+/* today card */
+.card { background: var(--surface); border-radius: 16px; box-shadow: var(--shadow); }
+.today { padding: 12px 14px; display: grid; gap: 8px; }
+.today h2 { margin: 0; font-family: var(--font-display); font-size: .95rem; letter-spacing: .02em; display: flex; justify-content: space-between; align-items: baseline; }
+.today h2 small { font-family: var(--font-body); color: var(--muted); font-weight: 500; font-size: 12.5px; }
+.todaylist { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; }
+.todaylist .none { grid-column: 1 / -1; }
+.todaylist .none { color: var(--muted); font-size: 13.5px; }
+.tchip { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; column-gap: 8px; border: 1.5px dashed var(--mc); background: var(--surface); border-radius: 12px; padding: 7px 10px; text-align: left; cursor: pointer; min-width: 0; }
+.tchip > :first-child { grid-row: span 2; }
+.tchip svg { width: 22px; height: 22px; }
+.tchip .nm { font-size: 13.5px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tchip .st { color: var(--muted); font-size: 12px; }
+.tchip.done { border-style: solid; background: color-mix(in srgb, var(--mc) 14%, var(--surface)); }
+.tchip.done .st { color: var(--mc); font-weight: 700; }
 
-.editor { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 16px; margin-bottom: 14px; display: grid; gap: 14px; }
-.editor h2 { font-family: var(--font-display); font-size: 1.15rem; margin: 0; }
-.seg { display: inline-flex; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; align-self: flex-start; }
-.seg button { border: none; background: var(--surface); color: var(--ink); font: inherit; font-size: 14px; padding: 8px 16px; cursor: pointer; }
-.seg button + button { border-left: 1px solid var(--line); }
-.seg button[aria-pressed="true"] { background: var(--accent); color: var(--surface); font-weight: 600; }
-.seg button:disabled { opacity: .45; cursor: not-allowed; }
+/* tray */
+.tray { display: grid; gap: 6px; }
+.trayrow { display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none; padding: 2px 2px 4px; margin: 0 -2px; -webkit-overflow-scrolling: touch; }
+.trayrow::-webkit-scrollbar { display: none; }
+.stamp { flex: none; display: inline-flex; align-items: center; gap: 6px; border: none; background: var(--surface); border-radius: 999px; padding: 5px 12px 5px 6px; font-size: 13px; font-weight: 600; box-shadow: var(--shadow); cursor: pointer; max-width: 170px; }
+.stamp > span:last-child { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.stamp svg { width: 20px; height: 20px; flex: none; }
+.stamp[aria-pressed="true"] { box-shadow: 0 0 0 2.5px var(--mc), var(--shadow); background: color-mix(in srgb, var(--mc) 14%, var(--surface)); }
+.trayhint { font-size: 12.5px; color: var(--on-bg-muted); min-height: 1.2em; }
+.trayhint b { color: var(--on-bg); }
+
+/* marks */
 .nick { display: inline-block; font-weight: 800; font-size: 11px; line-height: 1; letter-spacing: .02em; padding: 3px 4px; border-radius: 5px; background: color-mix(in srgb, currentColor 13%, transparent); white-space: nowrap; }
-.legend .nick { font-size: 13px; padding: 5px 6px; min-width: 24px; text-align: center; }
-.edit-actions .preview .nick { font-size: 14px; padding: 5px 7px; }
-@media (max-width: 520px) { .icons .nick { font-size: 9.5px; padding: 2px 3px; } }
-.todaycard { background: var(--surface); border-radius: 14px; padding: 12px 14px; margin-bottom: 12px; box-shadow: 0 4px 16px rgb(30 20 80 / .16); display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
-.todaycard h2 { font-family: var(--font-display); font-size: 1rem; margin: 0 6px 0 0; }
-.todaycard .none { color: var(--muted); font-size: 13.5px; }
-.todaycard button { display: inline-flex; align-items: center; gap: 6px; border: 1.5px dashed var(--mc); background: var(--surface); color: var(--ink); border-radius: 999px; padding: 5px 12px 5px 7px; font: inherit; font-size: 13px; cursor: pointer; }
-.todaycard button svg { width: 20px; height: 20px; }
-.todaycard button.done { border-style: solid; background: color-mix(in srgb, var(--mc) 14%, var(--surface)); }
-.todaycard button.done .st { color: var(--mc); font-weight: 700; }
-.todaycard .st { color: var(--muted); font-size: 12px; }
+.stamp .nick, .tchip .nick { font-size: 12px; padding: 4px 5px; }
 .gw { display: inline-flex; align-items: center; border-radius: 5px; outline: 1.5px dashed currentColor; outline-offset: 1px; opacity: .5; }
 .gw.missed { outline-color: var(--danger); opacity: .6; }
-.key { display: flex; align-items: center; gap: 8px; margin-top: 10px; font-size: 12.5px; color: var(--on-bg-muted); }
-.key .gw { color: var(--on-bg); margin-left: 6px; }
-.key .gw svg { width: 16px; height: 16px; }
-.sched { display: grid; gap: 12px; padding: 12px; border-radius: 12px; background: var(--chip); }
-.field select { border: 1px solid var(--line); border-radius: 10px; padding: 8px 10px; font: inherit; background: var(--surface); color: var(--ink); }
-.field input[type=date], .field input[type=time] { min-height: 38px; }
-.daypick { display: flex; flex-wrap: wrap; gap: 6px; }
-.daypick button { width: 40px; height: 40px; border-radius: 50%; border: 1.5px solid var(--line); background: var(--surface); color: var(--ink); font: inherit; font-weight: 600; font-size: 13px; cursor: pointer; }
-.daypick button[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--surface); }
-.cyc { display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 10px; }
-.remrow { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
-.remrow input[type=time] { border: 1px solid var(--line); border-radius: 10px; padding: 6px 10px; font: inherit; background: var(--surface); color: var(--ink); }
-.chk { display: inline-flex; align-items: center; gap: 8px; font-size: 14px; }
-.chk input { width: 20px; height: 20px; accent-color: var(--accent); }
-.row2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; }
-.field { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
-.field > span { font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); font-weight: 600; }
-.field input { border: 1px solid var(--line); border-radius: 10px; padding: 8px 10px; font: inherit; background: var(--surface); color: var(--ink); }
-.picks { display: flex; flex-wrap: wrap; gap: 6px; }
-.picks button { width: 44px; height: 44px; border-radius: 10px; border: 1.5px solid var(--line); background: var(--surface); display: grid; place-items: center; cursor: pointer; padding: 0; }
-.picks button svg { width: 26px; height: 26px; }
-.picks button[aria-pressed="true"] { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent); }
-.picks .sw { width: 32px; height: 32px; border-radius: 50%; }
-.edit-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
-.edit-actions .preview { display: inline-flex; align-items: center; gap: 8px; margin-right: auto; font-weight: 600; }
-.edit-actions .preview svg { width: 30px; height: 30px; }
-.btn { border: 1px solid var(--line); background: var(--surface); color: var(--ink); border-radius: 999px; padding: 7px 16px; font: inherit; font-size: 14px; font-weight: 600; cursor: pointer; }
+
+/* month grid */
+.cal { padding: 8px; }
+.dow, .grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 3px; }
+.dow div { text-align: center; font-size: 11px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); padding: 4px 0 6px; font-weight: 600; }
+.day { min-height: 88px; border: none; border-radius: 10px; background: transparent; text-align: left; padding: 5px; cursor: pointer; display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.day:active { background: var(--chip); }
+@media (hover: hover) { .day:hover { background: var(--chip); } }
+.day.blank { visibility: hidden; cursor: default; }
+.day .n { font-family: var(--font-display); font-weight: 600; font-size: 14px; font-variant-numeric: tabular-nums; width: 24px; height: 24px; display: grid; place-items: center; border-radius: 50%; line-height: 1; }
+.day.today .n { background: var(--accent); color: var(--surface); }
+.icons { display: flex; flex-wrap: wrap; gap: 3px; align-items: center; }
+.icons svg { width: 19px; height: 19px; }
+.notedot { display: block; width: 6px; height: 6px; border-radius: 50%; background: var(--muted); }
+.day .note { display: flex; gap: 3px; font-size: 11px; line-height: 1.25; color: var(--muted); min-width: 0; }
+.day .note svg { width: 12px; height: 12px; flex: none; margin-top: 1px; }
+.day .note span { overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; word-break: break-word; }
+@media (max-width: 520px) {
+  .day { min-height: 66px; padding: 3px; }
+  .icons svg { width: 15px; height: 15px; }
+  .icons .nick { font-size: 9.5px; padding: 2px 3px; }
+  .icons { gap: 2px; }
+  .day .note span { display: none; }
+}
+
+/* week list */
+.week { display: grid; }
+.wrow { display: grid; grid-template-columns: 58px minmax(0, 1fr); gap: 10px; align-items: center; min-height: 74px; border: none; background: transparent; text-align: left; padding: 8px 6px; cursor: pointer; border-bottom: 1px solid var(--line); }
+.wrow:last-child { border-bottom: none; }
+.wrow:active { background: var(--chip); }
+.wdate { display: grid; justify-items: center; gap: 2px; }
+.wdate small { font-size: 11px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); font-weight: 600; }
+.wdate b { font-family: var(--font-display); font-size: 22px; width: 40px; height: 40px; display: grid; place-items: center; border-radius: 50%; font-variant-numeric: tabular-nums; }
+.wrow.today .wdate b { background: var(--accent); color: var(--surface); }
+.wbody { display: grid; gap: 5px; min-width: 0; }
+.wbody .icons { gap: 6px; }
+.wbody .icons svg { width: 28px; height: 28px; }
+.wbody .icons .nick { font-size: 14px; padding: 5px 7px; }
+.wbody .note { font-size: 13px; color: var(--muted); display: flex; gap: 5px; }
+.wbody .note svg { width: 15px; height: 15px; flex: none; margin-top: 1px; }
+.wbody .empty { color: var(--muted); font-size: 13px; }
+
+.key { display: flex; align-items: center; gap: 8px; font-size: 12.5px; color: var(--on-bg-muted); }
+.key .gw { color: var(--on-bg); margin-left: 4px; }
+.key .gw svg { width: 15px; height: 15px; }
+
+/* sheets */
+.backdrop { position: fixed; inset: 0; background: rgb(20 14 50 / .45); z-index: 20; opacity: 0; transition: opacity .18s; }
+.backdrop.show { opacity: 1; }
+.sheet { position: fixed; z-index: 21; left: 50%; bottom: 0; width: min(100%, 560px); max-height: 90vh; overflow-y: auto; background: var(--surface); border-radius: 20px 20px 0 0; box-shadow: 0 -6px 30px rgb(20 14 50 / .3); padding: 16px 16px calc(18px + env(safe-area-inset-bottom)); transform: translate(-50%, 100%); transition: transform .24s cubic-bezier(.2,.8,.2,1); }
+.sheet.show { transform: translate(-50%, 0); }
+.sheet.zoom { top: 50%; bottom: auto; width: min(calc(100% - 24px), 480px); border-radius: 20px; max-height: 84vh; transform: translate(-50%, -50%) scale(.6); opacity: 0; transition: transform .22s cubic-bezier(.2,.8,.2,1), opacity .18s; padding-bottom: 18px; }
+.sheet.zoom.show { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+@media (min-width: 700px) { .sheet:not(.zoom) { bottom: auto; top: 50%; border-radius: 20px; transform: translate(-50%, -45%); opacity: 0; transition: transform .2s, opacity .18s; } .sheet:not(.zoom).show { transform: translate(-50%, -50%); opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .sheet, .sheet.zoom, .backdrop { transition: none; } }
+.shead { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 12px; }
+.shead h2 { margin: 0; font-family: var(--font-display); font-size: 1.25rem; }
+.shead .sub { color: var(--muted); font-size: 13px; margin-top: 2px; }
+.xbtn { width: 34px; height: 34px; border-radius: 50%; border: none; background: var(--chip); cursor: pointer; display: grid; place-items: center; flex: none; }
+.xbtn svg { width: 16px; height: 16px; }
+.backbtn { border: none; background: none; color: var(--accent); font-weight: 600; cursor: pointer; padding: 4px 0; }
+
+/* day view rows */
+.drows { display: grid; gap: 8px; }
+.drow { display: grid; grid-template-columns: 40px minmax(0, 1fr) auto; align-items: center; gap: 12px; width: 100%; border: 1.5px solid var(--line); background: var(--surface); border-radius: 14px; padding: 10px 12px; text-align: left; cursor: pointer; }
+.drow .mk { display: grid; place-items: center; }
+.drow .mk svg { width: 32px; height: 32px; }
+.drow .mk .nick { font-size: 14px; padding: 5px 6px; }
+.drow b { display: block; font-weight: 600; }
+.drow small { color: var(--muted); font-size: 12.5px; }
+.pill { font-size: 12.5px; font-weight: 700; padding: 5px 10px; border-radius: 999px; white-space: nowrap; border: 1.5px dashed var(--line); color: var(--muted); }
+.pill.due { border-color: var(--mc); color: var(--ink); }
+.pill.missed { border-color: var(--danger); color: var(--danger); }
+.drow.taken { border-color: var(--mc); background: color-mix(in srgb, var(--mc) 10%, var(--surface)); }
+.drow.taken .pill { border: none; background: var(--mc); color: #fff; }
+.dnote { display: grid; gap: 6px; margin-top: 14px; }
+.lbl { font-size: 11px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); font-weight: 600; }
+textarea, .field input, .field select { width: 100%; border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; font: inherit; font-size: 16px; background: var(--surface); color: var(--ink); }
+textarea { min-height: 80px; resize: vertical; }
+.sfoot { display: flex; justify-content: flex-end; gap: 8px; margin-top: 14px; flex-wrap: wrap; }
+.btn { border: 1px solid var(--line); background: var(--surface); border-radius: 999px; padding: 9px 18px; font-size: 15px; font-weight: 600; cursor: pointer; }
 .btn.primary { background: var(--accent); border-color: var(--accent); color: var(--surface); }
 .btn.danger { color: var(--danger); border-color: var(--danger); }
 .btn.danger.confirm { background: var(--danger); color: var(--surface); }
-.err { color: var(--danger); font-size: 13px; }
+.empty-note { color: var(--muted); font-size: 14px; }
 
-.cal { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 10px; }
-.dow, .grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 4px; }
-.dow div { text-align: center; font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); padding: 4px 0 8px; font-weight: 600; }
-.day { min-height: 92px; border: 1px solid transparent; border-radius: 10px; background: transparent; color: var(--ink); font: inherit; text-align: left; padding: 6px; cursor: pointer; display: flex; flex-direction: column; gap: 4px; min-width: 0; }
-.day:hover { background: var(--chip); }
-.day.blank { cursor: default; visibility: hidden; }
-.day .n { font-family: var(--font-display); font-weight: 600; font-size: 14px; font-variant-numeric: tabular-nums; line-height: 1; width: 24px; height: 24px; display: grid; place-items: center; border-radius: 50%; }
-.day.today .n { background: var(--accent); color: var(--surface); }
-.icons { display: flex; flex-wrap: wrap; gap: 3px; }
-.icons svg { width: 20px; height: 20px; }
-@media (max-width: 520px) {
-  .day { min-height: 70px; padding: 4px; }
-  .icons svg { width: 15px; height: 15px; }
-  .icons { gap: 2px; }
-}
-.day .note { display: flex; align-items: flex-start; gap: 3px; font-size: 11px; line-height: 1.25; color: var(--muted); min-width: 0; }
-.day .note svg { width: 13px; height: 13px; flex: none; margin-top: 1px; }
-.day .note span { overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; word-break: break-word; }
-@media (max-width: 520px) { .day .note span { display: none; } }
-.notebox { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 16px; margin-bottom: 14px; display: grid; gap: 10px; }
-.notebox h2 { font-family: var(--font-display); font-size: 1.15rem; margin: 0; }
-.notebox textarea { width: 100%; min-height: 90px; border: 1px solid var(--line); border-radius: 10px; padding: 8px 10px; font: inherit; background: var(--surface); color: var(--ink); resize: vertical; }
-.notebox textarea:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
-.notebox .edit-actions .spacer { margin-right: auto; font-size: 12.5px; color: var(--muted); }
-.status { font-size: 12.5px; color: var(--muted); margin-top: 14px; min-height: 1.2em; }
+/* manage list */
+.mlist { display: grid; gap: 8px; }
+.mrow { display: grid; grid-template-columns: 36px minmax(0, 1fr) auto; align-items: center; gap: 12px; border: 1px solid var(--line); background: var(--surface); border-radius: 14px; padding: 10px 12px; text-align: left; cursor: pointer; width: 100%; }
+.mrow .mk svg { width: 28px; height: 28px; }
+.mrow b { display: block; font-weight: 600; }
+.mrow small { color: var(--muted); font-size: 12.5px; }
+.mrow .chev { color: var(--muted); font-size: 20px; }
+.mrow.add { border-style: dashed; color: var(--accent); font-weight: 600; grid-template-columns: 1fr; text-align: center; }
+.msect { margin-top: 18px; display: grid; gap: 8px; }
+.msect .btn { width: 100%; text-align: left; display: flex; justify-content: space-between; align-items: center; }
+.msect label.btn input { display: none; }
+.mmsg { font-size: 13px; color: var(--muted); min-height: 1.2em; }
+
+/* editor */
+.ed { display: grid; gap: 14px; }
+.field { display: grid; gap: 6px; min-width: 0; }
+.row2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; }
+.sched { display: grid; gap: 12px; padding: 12px; border-radius: 14px; background: var(--chip); }
+.daypick { display: flex; flex-wrap: wrap; gap: 6px; }
+.daypick button { width: 40px; height: 40px; border-radius: 50%; border: 1.5px solid var(--line); background: var(--surface); font-weight: 600; font-size: 13px; cursor: pointer; }
+.daypick button[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--surface); }
+.cyc { display: grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap: 10px; }
+.remrow { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+.remrow input[type=time] { width: auto; }
+.chk { display: inline-flex; align-items: center; gap: 8px; font-size: 15px; }
+.chk input { width: 22px; height: 22px; accent-color: var(--accent); }
+.segc { display: inline-flex; border: 1px solid var(--line); border-radius: 12px; overflow: hidden; justify-self: start; }
+.segc button { border: none; background: var(--surface); padding: 9px 16px; font-size: 14px; cursor: pointer; }
+.segc button + button { border-left: 1px solid var(--line); }
+.segc button[aria-pressed="true"] { background: var(--accent); color: var(--surface); font-weight: 600; }
+.segc button:disabled { opacity: .45; cursor: not-allowed; }
+.picks { display: flex; flex-wrap: wrap; gap: 6px; }
+.picks button { width: 44px; height: 44px; border-radius: 12px; border: 1.5px solid var(--line); background: var(--surface); display: grid; place-items: center; cursor: pointer; padding: 0; }
+.picks button svg { width: 26px; height: 26px; }
+.picks button[aria-pressed="true"] { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent); }
+.picks .sw { width: 34px; height: 34px; border-radius: 50%; }
+.preview { display: inline-flex; align-items: center; gap: 8px; font-weight: 600; margin-right: auto; }
+.preview svg { width: 30px; height: 30px; }
+.preview .nick { font-size: 14px; padding: 5px 7px; }
+.err { color: var(--danger); font-size: 13px; width: 100%; }
+
+.toast { position: fixed; left: 50%; bottom: calc(18px + env(safe-area-inset-bottom)); transform: translateX(-50%); background: rgb(20 14 50 / .85); color: #fff; font-size: 13px; padding: 7px 14px; border-radius: 999px; opacity: 0; transition: opacity .2s; pointer-events: none; z-index: 30; }
+.toast.show { opacity: 1; }
 </style>
 </head>
 <body>
 <div class="wrap">
-  <header>
-    <div>
-      <h1 id="monthTitle">Medication Calendar</h1>
-      <p class="sub">Pick a medication, then tap each day you took it. Tap again to remove it.</p>
-    </div>
+  <div class="top">
+    <h1 id="title">Medication Calendar</h1>
+    <button class="iconbtn" id="manageBtn" aria-label="Medications and settings"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h10M18 7h2M4 17h4M12 17h8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="16" cy="7" r="2.3" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="10" cy="17" r="2.3" fill="none" stroke="currentColor" stroke-width="2"/></svg></button>
+  </div>
+  <div class="controls">
     <div class="nav">
-      <button id="prev" aria-label="Previous month">‹</button>
-      <button id="todayBtn" class="today-btn">Today</button>
-      <button id="next" aria-label="Next month">›</button>
+      <button id="prev" aria-label="Previous">‹</button>
+      <button id="todayBtn" class="todaybtn">Today</button>
+      <button id="next" aria-label="Next">›</button>
     </div>
-  </header>
+    <div class="seg" role="group" aria-label="Calendar view">
+      <button data-view="month">Month</button>
+      <button data-view="week">Week</button>
+    </div>
+  </div>
 
-  <section class="todaycard" id="todayCard" aria-label="Due today"></section>
-
-  <div class="legend" id="legend" role="toolbar" aria-label="Medications"></div>
-  <p class="hint" id="hint"></p>
-
-  <section class="editor" id="editor" hidden aria-labelledby="edTitle">
-    <h2 id="edTitle">Add a medication</h2>
-    <div class="row2">
-      <label class="field"><span>Name</span><input id="edName" maxlength="40" placeholder="e.g. Progesterone"></label>
-      <label class="field"><span>Nickname (up to 6 letters)</span><input id="edNick" maxlength="6" placeholder="e.g. TC, Zep" autocapitalize="characters"></label>
-      <div class="field"><span>Show on calendar</span><div class="seg" id="edShow"><button data-show="icon">Icon</button><button data-show="nick">Nickname</button></div></div>
-    </div>
-    <div class="sched">
-      <div class="row2">
-        <label class="field"><span>How often</span>
-          <select id="edFreq">
-            <option value="none">No set schedule</option>
-            <option value="daily">Every day</option>
-            <option value="days">Certain days of the week</option>
-            <option value="perweek">A number of times a week (any days)</option>
-            <option value="cycle">Days on, days off</option>
-          </select></label>
-        <label class="field"><span>Details (optional)</span><input id="edSched" maxlength="40" placeholder="e.g. calf, side stomach"></label>
-      </div>
-      <div class="field" id="fDays"><span>Which days</span><div class="daypick" id="edDays"></div></div>
-      <label class="field" id="fPerWeek"><span>Times a week</span><select id="edPerWeek"></select></label>
-      <div class="cyc" id="fCycle">
-        <label class="field"><span>Days on</span><select id="edOn"></select></label>
-        <label class="field"><span>Days off</span><select id="edOff"></select></label>
-        <label class="field"><span>First "on" day</span><input type="date" id="edStart"></label>
-      </div>
-      <div class="field" id="fRemind"><span>Reminder</span>
-        <div class="remrow"><label class="chk"><input type="checkbox" id="edRemind"> Remind me at</label><input type="time" id="edTime" value="09:00"></div>
-      </div>
-    </div>
-    <div class="field"><span>Icon</span><div class="picks" id="edShapes"></div></div>
-    <div class="field"><span>Color</span><div class="picks" id="edColors"></div></div>
-    <div class="edit-actions">
-      <span class="preview" id="edPreview"></span>
-      <span class="err" id="edErr"></span>
-      <button class="btn danger" id="edRemove" hidden>Remove</button>
-      <button class="btn" id="edCancel">Cancel</button>
-      <button class="btn primary" id="edSave">Save</button>
-    </div>
+  <section class="card today" aria-labelledby="todayTitle">
+    <h2 id="todayTitle">Today <small id="todayDate"></small></h2>
+    <div class="todaylist" id="todayList"></div>
   </section>
 
-  <section class="notebox" id="noteBox" hidden aria-labelledby="noteTitle">
-    <h2 id="noteTitle">Note</h2>
-    <textarea id="noteText" maxlength="1000" placeholder="How you felt, side effects, dose changes, anything to remember"></textarea>
-    <div class="edit-actions">
-      <span class="spacer">Command-Return also saves</span>
-      <button class="btn danger" id="noteDelete" hidden>Delete note</button>
-      <button class="btn" id="noteCancel">Cancel</button>
-      <button class="btn primary" id="noteSave">Save note</button>
-    </div>
-  </section>
+  <div class="tray">
+    <div class="trayrow" id="tray" role="toolbar" aria-label="Quick mark"></div>
+    <div class="trayhint" id="hint"></div>
+  </div>
 
-  <div class="cal" id="cal">
-    <div class="dow"><div>Sun</div><div>Mon</div><div>Tue</div><div>Wed</div><div>Thu</div><div>Fri</div><div>Sat</div></div>
-    <div class="grid" id="grid"></div>
-  </div>
-  <div class="key"><span class="gw">${KEY_DUE}</span> Due <span class="gw missed">${KEY_MISS}</span> Missed</div>
-  <div class="status" id="status"></div>
-  <div class="backup">
-    <button class="btn" id="remindBtn">Add reminders to Calendar</button>
-    <button class="btn" id="backupBtn">Save a backup</button>
-    <label class="btn">Restore a backup<input type="file" id="restoreFile" accept=".json,application/json"></label>
-    <span id="backupMsg">Entries stay on this phone only.</span>
-  </div>
+  <section class="card cal" id="cal" aria-label="Calendar"></section>
+  <div class="key" id="key"></div>
 </div>
+
+<div class="backdrop" id="backdrop" hidden></div>
+<div class="sheet" id="sheet" role="dialog" aria-modal="true" hidden></div>
+<div class="toast" id="toast" role="status"></div>
 
 <script>
 const SHAPES = {
@@ -271,79 +284,59 @@ const SHAPES = {
   moon: '<path d="M15.5 3.5a8.5 8.5 0 1 0 5 13.5 7 7 0 0 1-5-13.5z" fill="currentColor"/>',
   sun: '<circle cx="12" cy="12" r="4.5" fill="currentColor"/><g stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 2.5v2.5M12 19v2.5M2.5 12h2.5M19 12h2.5M5.3 5.3l1.8 1.8M16.9 16.9l1.8 1.8M5.3 18.7l1.8-1.8M16.9 7.1l1.8-1.8"/></g>',
 };
-const NOTE = { id: "__notes", name: "Notes", shape: "note", color: "#5b6b84" };
 SHAPES.note = '<path d="M6 3h9l4 4v13a1.5 1.5 0 0 1-1.5 1.5h-11A1.5 1.5 0 0 1 5 20V4.5A1.5 1.5 0 0 1 6.5 3z" fill="currentColor"/><path d="M15 3v4h4" fill="#fff" opacity=".45"/><path d="M8.5 11h7M8.5 14h7M8.5 17h4.5" stroke="#fff" stroke-opacity=".85" stroke-width="1.5" stroke-linecap="round"/>';
+const NOTE = { shape: "note", color: "#7a83a0" };
+const XICON = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg>';
 const COLORS = ["#d4920f", "#8a4fd0", "#d24c7c", "#138a86", "#2f6fd6", "#3e9b3e", "#e0602f", "#c23b3b", "#5b6b84", "#0e9fc9"];
-const DEFAULT_MEDS = [];
 
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
-const mark = (m, size) => (m.show === "nick" && m.nick) ? `<span class="nick" style="color:${m.color}">${esc(m.nick)}</span>` : icon(m, size);
 const icon = (m, size) => `<svg viewBox="0 0 24 24" aria-hidden="true" style="color:${m.color}${size ? `;width:${size}px;height:${size}px` : ""}">${SHAPES[m.shape] || SHAPES.pill}</svg>`;
+const mark = (m, size) => (m.show === "nick" && m.nick) ? `<span class="nick" style="color:${m.color}">${esc(m.nick)}</span>` : icon(m, size);
 const pad = n => String(n).padStart(2, "0");
 const keyOf = d => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
-const now = new Date();
-const todayKey = keyOf(now);
-let view = new Date(now.getFullYear(), now.getMonth(), 1);
+const parseKey = k => { const [y, m, d] = k.split("-").map(Number); return new Date(y, m - 1, d); };
+const utc = k => { const [y, m, d] = k.split("-").map(Number); return Date.UTC(y, m - 1, d); };
+const dayDiff = (a, b) => Math.round((utc(b) - utc(a)) / 864e5);
+const addDays = (k, n) => { const d = parseKey(k); d.setDate(d.getDate() + n); return keyOf(d); };
+const DOW = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+const DOWL = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+const fmtLong = k => parseKey(k).toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" });
+const fmtShort = k => parseKey(k).toLocaleDateString("en-US", { month: "short", day: "numeric" });
+const todayKey = keyOf(new Date());
 
-// State: days[dateKey] = { meds: { medId: {...} }, notes }, meds = [...]
-let days = {};
-let meds = DEFAULT_MEDS.map(m => ({ ...m }));
+// ---------- state & storage ----------
+let days = {}, meds = [];
 let activeMed = null;
-let editing = false;
-
-// ---------- storage ----------
-const APP = typeof window.__APP_SAVED === "object" && window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.save;
-const LS = "med-calendar-log";
+const LS = "med-calendar-log", PREF = "med-calendar-prefs";
+let prefs = { view: "month" };
+try { prefs = Object.assign(prefs, JSON.parse(localStorage.getItem(PREF) || "{}")); } catch (e) {}
+const savePrefs = () => { try { localStorage.setItem(PREF, JSON.stringify(prefs)); } catch (e) {} };
 function loadFrom(data) {
   if (!data || typeof data !== "object") return;
   if (data.version === 2) {
     days = data.days && typeof data.days === "object" ? data.days : {};
     if (Array.isArray(data.meds)) meds = data.meds;
-  } else {
-    days = data; // first version stored days only
-  }
+  } else days = data;
 }
+try { loadFrom(JSON.parse(localStorage.getItem(LS) || "{}")); } catch (e) {}
 function save() {
-  const payload = JSON.stringify({ version: 2, days, meds });
-  try {
-    if (APP) window.webkit.messageHandlers.save.postMessage(payload);
-    else localStorage.setItem(LS, payload);
-    setStatus("Saved");
-  } catch (e) { setStatus("Could not save"); }
+  try { localStorage.setItem(LS, JSON.stringify({ version: 2, days, meds })); toast("Saved"); }
+  catch (e) { toast("Could not save"); }
 }
-if (APP) loadFrom(window.__APP_SAVED);
-else { try { loadFrom(JSON.parse(localStorage.getItem(LS) || "{}")); } catch (e) {} }
-activeMed = meds.length ? meds[0].id : null;
-let statusTimer;
-function setStatus(t) { const el = document.getElementById("status"); el.textContent = t; clearTimeout(statusTimer); statusTimer = setTimeout(() => el.textContent = "", 2000); }
+let toastT;
+function toast(t) { const el = document.getElementById("toast"); el.textContent = t; el.classList.add("show"); clearTimeout(toastT); toastT = setTimeout(() => el.classList.remove("show"), 1200); }
 
-// ---------- legend ----------
-function renderLegend() {
-  const lg = document.getElementById("legend");
-  lg.classList.toggle("editing", editing);
-  lg.innerHTML = meds.map(m => `<button class="med" data-med="${esc(m.id)}" aria-pressed="${!editing && activeMed === m.id}" style="--mc:${m.color}">${mark(m, 24)}<span class="lg"><b>${esc(m.name)}</b>${medLabel(m) ? `<i>${esc(medLabel(m))}</i>` : ""}</span></button>`).join("")
-    + `<button class="med" data-med="__notes" aria-pressed="${!editing && activeMed === "__notes"}" style="--mc:${NOTE.color}">${icon(NOTE, 24)}<span class="lg"><b>Notes</b><i>Tap a day to write</i></span></button>`
-    + `<button class="tool" id="addBtn">+ Add medication</button>`
-    + `<button class="tool${editing ? " on" : ""}" id="editBtn">${editing ? "Done editing" : "Edit"}</button>`;
-  const h = document.getElementById("hint");
-  if (editing) h.innerHTML = "Tap a medication to change its name, schedule, icon or color, or to remove it.";
-  else if (activeMed === "__notes") h.innerHTML = "Tap any day to write or change its note.";
-  else if (activeMed) h.innerHTML = `Tap days to add or remove <b>${esc(medById(activeMed).name)}</b>.`;
-  else h.innerHTML = meds.length ? "Pick a medication above, then tap the days you took it." : "Tap <b>+ Add medication</b> to set up your first one.";
-}
-const medById = id => meds.find(m => m.id === id);
+// view cursor: month view uses first of month; week view uses Sunday of week
+let cursor = todayKey;
 
 // ---------- schedules ----------
-const DOW = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-const parseKey = k => { const [y, m, d] = k.split("-").map(Number); return new Date(y, m - 1, d); };
-const dayDiff = (a, b) => Math.round((Date.UTC(...b.split("-").map((v, i) => i === 1 ? v - 1 : +v)) - Date.UTC(...a.split("-").map((v, i) => i === 1 ? v - 1 : +v))) / 864e5);
-const addDays = (k, n) => { const d = parseKey(k); d.setDate(d.getDate() + n); return keyOf(d); };
+const medById = id => meds.find(m => m.id === id);
 function schedText(m) {
   const s = m.schedule; if (!s) return "";
   if (s.type === "daily") return "Every day";
   if (s.type === "days") {
     if (s.days.length === 7) return "Every day";
-    if (s.days.length === 1) return "Every " + ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"][s.days[0]];
+    if (s.days.length === 1) return "Every " + DOWL[s.days[0]];
     return s.days.slice().sort().map(d => DOW[d]).join(", ");
   }
   if (s.type === "perweek") return s.perWeek === 1 ? "Once a week" : s.perWeek === 2 ? "Twice a week" : s.perWeek + " times a week";
@@ -365,254 +358,376 @@ function weekCount(m, k) {
   let c = 0; for (let i = 0; i < 7; i++) if (isTaken(m, addDays(start, i))) c++;
   return c;
 }
+function statusFor(m, k) {
+  if (isTaken(m, k)) return "taken";
+  if (isDueFixed(m, k)) return k < todayKey ? "missed" : "due";
+  return "";
+}
 function toggleDose(medId, k) {
   const e = days[k] || (days[k] = { meds: {}, notes: "" });
   if (!e.meds) e.meds = {};
   if (e.meds[medId]) delete e.meds[medId]; else e.meds[medId] = { site: "" };
   if (!Object.keys(e.meds).length && !e.notes) delete days[k];
-  save(); renderGrid(); renderToday();
+  save(); renderMain();
+}
+
+// ---------- main render ----------
+function renderMain() { renderTop(); renderToday(); renderTray(); renderCal(); }
+function weekStart(k) { return addDays(k, -parseKey(k).getDay()); }
+function renderTop() {
+  const d = parseKey(cursor);
+  let t;
+  if (prefs.view === "week") {
+    const s = weekStart(cursor), e = addDays(s, 6);
+    const sd = parseKey(s), ed = parseKey(e);
+    t = sd.getMonth() === ed.getMonth()
+      ? `${sd.toLocaleString("en-US", { month: "short" })} ${sd.getDate()} – ${ed.getDate()}`
+      : `${fmtShort(s)} – ${fmtShort(e)}`;
+  } else t = d.toLocaleString("en-US", { month: "long", year: "numeric" });
+  document.getElementById("title").textContent = t;
+  document.querySelectorAll(".seg [data-view]").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.view === prefs.view)));
 }
 function renderToday() {
+  document.getElementById("todayDate").textContent = fmtLong(todayKey);
   const items = [];
   for (const m of meds) {
-    const s = m.schedule; if (!s || s.type === "none") continue;
+    const s = m.schedule; if (!s) continue;
     const done = isTaken(m, todayKey);
     if (s.type === "perweek") {
       const c = weekCount(m, todayKey);
       if (c >= s.perWeek && !done) continue;
-      items.push({ m, done, st: done ? `Done · ${c} of ${s.perWeek} this week` : `${c} of ${s.perWeek} this week` });
-    } else if (isDueFixed(m, todayKey)) {
-      items.push({ m, done, st: done ? "Done" : "Due" });
-    }
+      items.push({ m, done, st: `${c} of ${s.perWeek} this week` });
+    } else if (isDueFixed(m, todayKey)) items.push({ m, done, st: done ? "Done" : "Due" });
   }
-  const el = document.getElementById("todayCard");
-  el.innerHTML = `<h2>Today</h2>` + (items.length
-    ? items.map(it => `<button class="${it.done ? "done" : ""}" data-today="${esc(it.m.id)}" style="--mc:${it.m.color}" aria-label="${esc(it.m.name)}: ${it.st}. Tap to ${it.done ? "undo" : "mark as taken"}.">${mark(it.m, 20)}<span>${esc(it.m.name)}</span><span class="st">${it.st}</span></button>`).join("")
-    : `<span class="none">${meds.some(m => m.schedule && m.schedule.type !== "none") ? "Nothing due today." : "Set a schedule for a medication (Edit, then tap it) to see what's due."}</span>`);
+  document.getElementById("todayList").innerHTML = items.length
+    ? items.map(it => `<button class="tchip${it.done ? " done" : ""}" data-today="${esc(it.m.id)}" style="--mc:${it.m.color}" aria-label="${esc(it.m.name)}: ${it.st}. Tap to ${it.done ? "undo" : "mark as taken"}.">${mark(it.m, 22)}<span class="nm">${esc(it.m.name)}</span><span class="st">${it.done && it.st !== "Done" ? "✓ " : ""}${it.st}</span></button>`).join("")
+    : `<span class="none">${!meds.length ? "Tap the settings button at the top right to add your medications." : meds.some(m => m.schedule) ? "Nothing due today." : "Give a medication a schedule (settings button, then tap it) to see what's due."}</span>`;
 }
-document.getElementById("todayCard").addEventListener("click", ev => {
-  const b = ev.target.closest("[data-today]"); if (b) toggleDose(b.dataset.today, todayKey);
-});
-document.getElementById("legend").addEventListener("click", ev => {
-  if (ev.target.closest("#addBtn")) { openEditor(null); return; }
-  if (ev.target.closest("#editBtn")) { editing = !editing; closeEditor(); renderLegend(); return; }
-  const b = ev.target.closest("[data-med]"); if (!b) return;
-  if (editing) { if (b.dataset.med !== "__notes") openEditor(b.dataset.med); return; }
-  closeNote();
-  activeMed = activeMed === b.dataset.med ? null : b.dataset.med;
-  renderLegend();
-});
+function renderTray() {
+  const tray = document.getElementById("tray");
+  tray.innerHTML = meds.map(m => `<button class="stamp" data-med="${esc(m.id)}" aria-pressed="${activeMed === m.id}" style="--mc:${m.color}">${mark(m, 22)}<span>${esc(m.name)}</span></button>`).join("")
+    || `<button class="stamp" id="trayAdd" style="--mc:var(--accent)">+ Add medication</button>`;
+  const h = document.getElementById("hint");
+  h.innerHTML = activeMed && medById(activeMed)
+    ? `Tap days to mark <b>${esc(medById(activeMed).name)}</b>. Tap it again to stop.`
+    : meds.length ? "Tap a day to open it · pick one above to mark days fast" : "";
+}
+function dayMarks(k) {
+  return meds.map(m => {
+    const st = statusFor(m, k);
+    if (st === "taken") return mark(m);
+    if (!st) return "";
+    return `<span class="gw${st === "missed" ? " missed" : ""}" style="color:${m.color}">${mark(m)}</span>`;
+  }).join("");
+}
+function dayLabel(k) {
+  const taken = meds.filter(m => isTaken(m, k)).map(m => m.name);
+  const due = meds.filter(m => !isTaken(m, k) && isDueFixed(m, k)).map(m => m.name);
+  const e = days[k];
+  return `${fmtLong(k)}: ${taken.length ? "taken " + taken.join(", ") : "nothing logged"}${due.length ? (k < todayKey ? ". Missed: " : ". Due: ") + due.join(", ") : ""}${e && e.notes ? ". Note: " + e.notes : ""}`;
+}
+function renderCal() {
+  const cal = document.getElementById("cal");
+  if (prefs.view === "week") {
+    const s = weekStart(cursor);
+    let html = `<div class="week">`;
+    for (let i = 0; i < 7; i++) {
+      const k = addDays(s, i), e = days[k], marks = dayMarks(k);
+      html += `<button class="wrow${k === todayKey ? " today" : ""}" data-k="${k}" aria-label="${esc(dayLabel(k))}">
+        <span class="wdate"><small>${DOW[i]}</small><b>${parseKey(k).getDate()}</b></span>
+        <span class="wbody">${marks ? `<span class="icons">${marks}</span>` : `<span class="empty">Nothing logged</span>`}${e && e.notes ? `<span class="note">${icon(NOTE)}<span>${esc(e.notes)}</span></span>` : ""}</span></button>`;
+    }
+    cal.innerHTML = html + `</div>`;
+  } else {
+    const d = parseKey(cursor), y = d.getFullYear(), mo = d.getMonth();
+    const first = new Date(y, mo, 1).getDay(), count = new Date(y, mo + 1, 0).getDate();
+    let html = `<div class="dow">${DOW.map(x => `<div>${x}</div>`).join("")}</div><div class="grid">`;
+    for (let i = 0; i < first; i++) html += `<div class="day blank"></div>`;
+    for (let n = 1; n <= count; n++) {
+      const k = `${y}-${pad(mo + 1)}-${pad(n)}`, e = days[k];
+      html += `<button class="day${k === todayKey ? " today" : ""}" data-k="${k}" aria-label="${esc(dayLabel(k))}"><span class="n">${n}</span><span class="icons">${dayMarks(k)}</span>${e && e.notes ? `<span class="note">${icon(NOTE)}<span>${esc(e.notes)}</span></span>` : ""}</button>`;
+    }
+    cal.innerHTML = html + `</div>`;
+  }
+  document.getElementById("key").innerHTML = meds.some(m => m.schedule && m.schedule.type !== "perweek")
+    ? `<span class="gw">${icon({ shape: "pill", color: "currentColor" })}</span> Due <span class="gw missed">${icon({ shape: "pill", color: "currentColor" })}</span> Missed` : "";
+}
 
-// ---------- editor ----------
-let edShow = "icon";
-let edId = null, edShape = "pill", edColor = COLORS[0], removeArmed = false;
-let edDays = [];
-(function initSchedFields() {
-  const opt = (n, label) => `<option value="${n}">${label || n}</option>`;
-  document.getElementById("edPerWeek").innerHTML = [1,2,3,4,5,6].map(n => opt(n)).join("");
-  document.getElementById("edOn").innerHTML = Array.from({ length: 21 }, (_, i) => opt(i + 1)).join("");
-  document.getElementById("edOff").innerHTML = Array.from({ length: 21 }, (_, i) => opt(i + 1)).join("");
-})();
-function renderSchedFields() {
-  const t = document.getElementById("edFreq").value;
-  document.getElementById("fDays").hidden = t !== "days";
-  document.getElementById("fPerWeek").hidden = t !== "perweek";
-  document.getElementById("fCycle").hidden = t !== "cycle";
-  document.getElementById("fRemind").hidden = t === "none";
-  document.getElementById("edDays").innerHTML = DOW.map((d, i) => `<button data-dow="${i}" aria-label="${d}" aria-pressed="${edDays.includes(i)}">${d[0]}</button>`).join("");
-}
-document.getElementById("edFreq").addEventListener("change", renderSchedFields);
-document.getElementById("edDays").addEventListener("click", ev => {
-  const b = ev.target.closest("[data-dow]"); if (!b) return;
-  const i = +b.dataset.dow; edDays = edDays.includes(i) ? edDays.filter(x => x !== i) : [...edDays, i];
-  renderSchedFields();
+// ---------- main events ----------
+document.getElementById("todayList").addEventListener("click", ev => { const b = ev.target.closest("[data-today]"); if (b) toggleDose(b.dataset.today, todayKey); });
+document.getElementById("tray").addEventListener("click", ev => {
+  if (ev.target.closest("#trayAdd")) { openSheet("edit", null); return; }
+  const b = ev.target.closest("[data-med]"); if (!b) return;
+  activeMed = activeMed === b.dataset.med ? null : b.dataset.med;
+  renderTray();
 });
-function openEditor(id) {
-  edId = id; removeArmed = false;
+document.getElementById("cal").addEventListener("click", ev => {
+  const b = ev.target.closest("[data-k]"); if (!b) return;
+  if (activeMed && medById(activeMed)) { toggleDose(activeMed, b.dataset.k); return; }
+  openSheet("day", b.dataset.k, b);
+});
+document.querySelectorAll(".seg [data-view]").forEach(b => b.onclick = () => { prefs.view = b.dataset.view; savePrefs(); renderMain(); });
+function step(dir) {
+  if (prefs.view === "week") cursor = addDays(cursor, 7 * dir);
+  else { const d = parseKey(cursor); cursor = keyOf(new Date(d.getFullYear(), d.getMonth() + dir, 1)); }
+  renderMain();
+}
+document.getElementById("prev").onclick = () => step(-1);
+document.getElementById("next").onclick = () => step(1);
+document.getElementById("todayBtn").onclick = () => { cursor = todayKey; renderMain(); };
+document.getElementById("manageBtn").onclick = () => openSheet("manage");
+
+// ---------- sheets ----------
+const sheet = document.getElementById("sheet"), backdrop = document.getElementById("backdrop");
+let sheetKind = null, sheetArg = null;
+function openSheet(kind, arg, originEl) {
+  sheetKind = kind; sheetArg = arg;
+  sheet.className = "sheet" + (kind === "day" ? " zoom" : "");
+  if (kind === "day" && originEl) {
+    const r = originEl.getBoundingClientRect();
+    const ox = r.left + r.width / 2 - window.innerWidth / 2, oy = r.top + r.height / 2 - window.innerHeight / 2;
+    sheet.style.transformOrigin = `calc(50% + ${ox}px) calc(50% + ${oy}px)`;
+  } else sheet.style.transformOrigin = "";
+  renderSheet();
+  backdrop.hidden = false; sheet.hidden = false;
+  document.body.classList.add("locked");
+  requestAnimationFrame(() => { backdrop.classList.add("show"); sheet.classList.add("show"); });
+}
+function closeSheet() {
+  if (sheetKind === "day") flushNote();
+  backdrop.classList.remove("show"); sheet.classList.remove("show");
+  document.body.classList.remove("locked");
+  setTimeout(() => { if (!sheet.classList.contains("show")) { sheet.hidden = true; backdrop.hidden = true; } }, 230);
+  sheetKind = null;
+  renderMain();
+}
+backdrop.onclick = closeSheet;
+document.addEventListener("keydown", ev => { if (ev.key === "Escape" && sheetKind) closeSheet(); });
+function renderSheet() {
+  if (sheetKind === "day") renderDaySheet(sheetArg);
+  else if (sheetKind === "manage") renderManage();
+  else if (sheetKind === "edit") renderEditor(sheetArg);
+}
+
+// ----- day sheet -----
+let noteTimer = null, noteKey = null;
+function flushNote() {
+  if (!noteKey) return;
+  clearTimeout(noteTimer);
+  const ta = document.getElementById("dNote"); if (!ta) return;
+  const text = ta.value.trim(), k = noteKey;
+  const e = days[k] || { meds: {}, notes: "" };
+  if ((e.notes || "") === text) return;
+  e.notes = text; days[k] = e;
+  if (!text && (!e.meds || !Object.keys(e.meds).length)) delete days[k];
+  save();
+}
+function renderDaySheet(k) {
+  noteKey = k;
+  const e = days[k] || {};
+  const rows = meds.map(m => {
+    const st = statusFor(m, k);
+    const pillText = st === "taken" ? "Taken" : st === "due" ? "Due" : st === "missed" ? "Missed" : "Not taken";
+    return `<button class="drow${st === "taken" ? " taken" : ""}" data-dmed="${esc(m.id)}" style="--mc:${m.color}" aria-pressed="${st === "taken"}">
+      <span class="mk">${mark(m, 32)}</span><span><b>${esc(m.name)}</b>${medLabel(m) ? `<small>${esc(medLabel(m))}</small>` : ""}</span><span class="pill ${st}">${pillText}</span></button>`;
+  }).join("");
+  const wk = parseKey(k);
+  sheet.setAttribute("aria-label", fmtLong(k));
+  sheet.innerHTML = `<div class="shead"><div><h2>${DOWL[wk.getDay()]}, ${wk.toLocaleDateString("en-US", { month: "long", day: "numeric" })}</h2><div class="sub">${k === todayKey ? "Today" : k < todayKey ? dayDiff(k, todayKey) + " days ago" : "In " + dayDiff(todayKey, k) + " days"} · tap a medication to mark it</div></div><button class="xbtn" data-close aria-label="Close">${XICON}</button></div>
+    <div class="drows">${rows || `<p class="empty-note">No medications yet. Add them from the settings button.</p>`}</div>
+    <div class="dnote"><span class="lbl">Note</span><textarea id="dNote" maxlength="1000" placeholder="How you felt, side effects, dose changes">${esc(e.notes || "")}</textarea></div>
+    <div class="sfoot"><button class="btn primary" data-close>Done</button></div>`;
+}
+
+// ----- manage sheet -----
+let mmsg = "";
+function renderManage() {
+  sheet.setAttribute("aria-label", "Medications");
+  sheet.innerHTML = `<div class="shead"><h2>Medications</h2><button class="xbtn" data-close aria-label="Close">${XICON}</button></div>
+    <div class="mlist">${meds.map(m => `<button class="mrow" data-edit="${esc(m.id)}"><span class="mk">${mark(m, 28)}</span><span><b>${esc(m.name)}</b><small>${esc(medLabel(m) || "No schedule")}${m.remind && m.remind.on ? " · reminder " + fmtTime(m.remind.time) : ""}</small></span><span class="chev">›</span></button>`).join("")}
+      <button class="mrow add" data-edit="">+ Add medication</button></div>
+    <div class="msect">
+      <span class="lbl">Reminders</span>
+      <button class="btn" id="remindBtn">Add reminders to Calendar <span>›</span></button>
+      <span class="lbl" style="margin-top:8px">Backup</span>
+      <button class="btn" id="backupBtn">Save a backup <span>›</span></button>
+      <label class="btn">Restore a backup <span>›</span><input type="file" id="restoreFile" accept=".json,application/json"></label>
+      <span class="mmsg" id="mmsg">${esc(mmsg || "Your entries are stored only on this phone.")}</span>
+    </div>`;
+}
+const fmtTime = t => { const [h, m] = (t || "09:00").split(":").map(Number); return `${((h + 11) % 12) + 1}:${pad(m)} ${h < 12 ? "AM" : "PM"}`; };
+const setMsg = t => { mmsg = t; const el = document.getElementById("mmsg"); if (el) el.textContent = t; };
+
+// ----- editor sheet -----
+let ed = null;
+function renderEditor(id) {
   const m = id ? medById(id) : null;
-  document.getElementById("edTitle").textContent = m ? `Edit ${m.name}` : "Add a medication";
-  document.getElementById("edName").value = m ? m.name : "";
-  document.getElementById("edSched").value = m ? (m.sched || "") : "";
-  const sc = (m && m.schedule) || { type: "none", days: [], perWeek: 3, on: 5, off: 2, start: todayKey };
-  document.getElementById("edFreq").value = sc.type || "none";
-  edDays = (sc.days || []).slice();
-  document.getElementById("edPerWeek").value = String(sc.perWeek || 3);
-  document.getElementById("edOn").value = String(sc.on || 5);
-  document.getElementById("edOff").value = String(sc.off || 2);
-  document.getElementById("edStart").value = sc.start || todayKey;
-  const rm0 = (m && m.remind) || { on: false, time: "09:00" };
-  document.getElementById("edRemind").checked = !!rm0.on;
-  document.getElementById("edTime").value = rm0.time || "09:00";
-  renderSchedFields();
-  document.getElementById("edNick").value = m ? (m.nick || "") : "";
-  edShow = m && m.show === "nick" ? "nick" : "icon";
   const used = new Set(meds.map(x => x.shape)), usedC = new Set(meds.map(x => x.color));
-  edShape = m ? m.shape : (Object.keys(SHAPES).find(s => s !== "note" && !used.has(s)) || "pill");
-  edColor = m ? m.color : (COLORS.find(c => !usedC.has(c)) || COLORS[0]);
-  const rm = document.getElementById("edRemove");
-  rm.hidden = !m; rm.classList.remove("confirm"); rm.textContent = "Remove";
-  document.getElementById("edErr").textContent = "";
-  renderPicks();
-  document.getElementById("editor").hidden = false;
-  document.getElementById("edName").focus();
+  const sc = (m && m.schedule) || { type: "none", days: [], perWeek: 3, on: 5, off: 2, start: todayKey };
+  const rm = (m && m.remind) || { on: false, time: "09:00" };
+  ed = {
+    id, name: m ? m.name : "", nick: m ? (m.nick || "") : "", show: m && m.show === "nick" ? "nick" : "icon", sched: m ? (m.sched || "") : "",
+    shape: m ? m.shape : (Object.keys(SHAPES).find(s => s !== "note" && !used.has(s)) || "pill"),
+    color: m ? m.color : (COLORS.find(c => !usedC.has(c)) || COLORS[0]),
+    type: sc.type || "none", days: (sc.days || []).slice(), perWeek: sc.perWeek || 3, on: sc.on || 5, off: sc.off || 2, start: sc.start || todayKey,
+    remind: !!rm.on, time: rm.time || "09:00", armed: false,
+  };
+  const opts = (arr, v) => arr.map(n => `<option value="${n}"${+v === n ? " selected" : ""}>${n}</option>`).join("");
+  sheet.setAttribute("aria-label", m ? "Edit " + m.name : "Add a medication");
+  sheet.innerHTML = `<div class="shead"><div><button class="backbtn" data-back>‹ Medications</button><h2>${m ? "Edit " + esc(m.name) : "Add a medication"}</h2></div><button class="xbtn" data-close aria-label="Close">${XICON}</button></div>
+  <div class="ed">
+    <div class="row2">
+      <label class="field"><span class="lbl">Name</span><input id="edName" maxlength="40" placeholder="e.g. Progesterone" value="${esc(ed.name)}"></label>
+      <label class="field"><span class="lbl">Nickname (up to 6 letters)</span><input id="edNick" maxlength="6" placeholder="e.g. TC, Zep" value="${esc(ed.nick)}"></label>
+    </div>
+    <div class="field"><span class="lbl">Show on calendar</span><div class="segc" id="edShow"><button data-show="icon">Icon</button><button data-show="nick">Nickname</button></div></div>
+    <div class="sched">
+      <div class="row2">
+        <label class="field"><span class="lbl">How often</span>
+          <select id="edFreq">
+            <option value="none">No set schedule</option><option value="daily">Every day</option><option value="days">Certain days of the week</option>
+            <option value="perweek">A number of times a week (any days)</option><option value="cycle">Days on, days off</option>
+          </select></label>
+        <label class="field"><span class="lbl">Details (optional)</span><input id="edSched" maxlength="40" placeholder="e.g. calf, side stomach" value="${esc(ed.sched)}"></label>
+      </div>
+      <div class="field" id="fDays"><span class="lbl">Which days</span><div class="daypick" id="edDays"></div></div>
+      <label class="field" id="fPerWeek"><span class="lbl">Times a week</span><select id="edPerWeek">${opts([1,2,3,4,5,6], ed.perWeek)}</select></label>
+      <div class="cyc" id="fCycle">
+        <label class="field"><span class="lbl">Days on</span><select id="edOn">${opts(Array.from({ length: 21 }, (_, i) => i + 1), ed.on)}</select></label>
+        <label class="field"><span class="lbl">Days off</span><select id="edOff">${opts(Array.from({ length: 21 }, (_, i) => i + 1), ed.off)}</select></label>
+        <label class="field"><span class="lbl">First "on" day</span><input type="date" id="edStart" value="${ed.start}"></label>
+      </div>
+      <div class="field" id="fRemind"><span class="lbl">Reminder</span>
+        <div class="remrow"><label class="chk"><input type="checkbox" id="edRemind"${ed.remind ? " checked" : ""}> Remind me at</label><input type="time" id="edTime" value="${ed.time}"></div>
+      </div>
+    </div>
+    <div class="field"><span class="lbl">Icon</span><div class="picks" id="edShapes"></div></div>
+    <div class="field"><span class="lbl">Color</span><div class="picks" id="edColors"></div></div>
+    <div class="sfoot" style="align-items:center">
+      <span class="preview" id="edPreview"></span>
+      ${m ? `<button class="btn danger" id="edRemove">Remove</button>` : ""}
+      <button class="btn primary" id="edSave">Save</button>
+      <span class="err" id="edErr"></span>
+    </div>
+  </div>`;
+  document.getElementById("edFreq").value = ed.type;
+  edRefresh();
 }
-function closeEditor() { document.getElementById("editor").hidden = true; edId = null; }
-function renderPicks() {
-  document.getElementById("edShapes").innerHTML = Object.keys(SHAPES).filter(x => x !== "note").map(s => `<button data-shape="${s}" aria-label="${s} icon" aria-pressed="${s === edShape}">${icon({ shape: s, color: edColor })}</button>`).join("");
-  document.getElementById("edColors").innerHTML = COLORS.map(c => `<button class="sw" data-color="${c}" aria-label="Color ${c}" aria-pressed="${c === edColor}" style="background:${c}"></button>`).join("");
-  const name = document.getElementById("edName").value.trim() || "Preview";
+function edRefresh() {
   const nick = document.getElementById("edNick").value.trim();
-  const nb = document.querySelector('#edShow [data-show="nick"]');
-  nb.disabled = !nick;
-  const showNow = nick && edShow === "nick" ? "nick" : "icon";
+  ed.type = document.getElementById("edFreq").value;
+  document.getElementById("fDays").hidden = ed.type !== "days";
+  document.getElementById("fPerWeek").hidden = ed.type !== "perweek";
+  document.getElementById("fCycle").hidden = ed.type !== "cycle";
+  document.getElementById("fRemind").hidden = ed.type === "none";
+  document.getElementById("edDays").innerHTML = DOW.map((d, i) => `<button data-dow="${i}" aria-label="${DOWL[i]}" aria-pressed="${ed.days.includes(i)}">${d[0]}</button>`).join("");
+  const showNow = nick && ed.show === "nick" ? "nick" : "icon";
+  document.querySelector('#edShow [data-show="nick"]').disabled = !nick;
   document.querySelectorAll("#edShow [data-show]").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.show === showNow)));
-  document.getElementById("edPreview").innerHTML = `${mark({ shape: edShape, color: edColor, nick, show: showNow })}<span>${esc(name)}</span>`;
+  document.getElementById("edShapes").innerHTML = Object.keys(SHAPES).filter(s => s !== "note").map(s => `<button data-shape="${s}" aria-label="${s} icon" aria-pressed="${s === ed.shape}">${icon({ shape: s, color: ed.color })}</button>`).join("");
+  document.getElementById("edColors").innerHTML = COLORS.map(c => `<button class="sw" data-color="${c}" aria-label="Color ${c}" aria-pressed="${c === ed.color}" style="background:${c}"></button>`).join("");
+  const name = document.getElementById("edName").value.trim() || "Preview";
+  document.getElementById("edPreview").innerHTML = `${mark({ shape: ed.shape, color: ed.color, nick, show: showNow }, 30)}<span>${esc(name)}</span>`;
 }
-document.getElementById("edShapes").addEventListener("click", ev => { const b = ev.target.closest("[data-shape]"); if (b) { edShape = b.dataset.shape; renderPicks(); } });
-document.getElementById("edColors").addEventListener("click", ev => { const b = ev.target.closest("[data-color]"); if (b) { edColor = b.dataset.color; renderPicks(); } });
-document.getElementById("edName").addEventListener("input", renderPicks);
-document.getElementById("edNick").addEventListener("input", renderPicks);
-document.getElementById("edShow").addEventListener("click", ev => { const b = ev.target.closest("[data-show]"); if (b && !b.disabled) { edShow = b.dataset.show; renderPicks(); } });
-document.getElementById("edCancel").onclick = closeEditor;
-document.getElementById("edSave").onclick = () => {
-  const name = document.getElementById("edName").value.trim();
-  const sched = document.getElementById("edSched").value.trim();
-  const nick = document.getElementById("edNick").value.trim();
-  const show = nick && edShow === "nick" ? "nick" : "icon";
-  const type = document.getElementById("edFreq").value;
-  if (type === "days" && !edDays.length) { document.getElementById("edErr").textContent = "Pick at least one day."; return; }
-  const prev = edId ? medById(edId).schedule : null;
-  const schedule = type === "none" ? null : {
-    type, days: edDays.slice().sort(),
-    perWeek: +document.getElementById("edPerWeek").value,
-    on: +document.getElementById("edOn").value, off: +document.getElementById("edOff").value,
-    start: document.getElementById("edStart").value || todayKey,
+function edSave() {
+  const $ = id => document.getElementById(id);
+  const name = $("edName").value.trim();
+  if (!name) { $("edErr").textContent = "Give the medication a name."; return; }
+  if (ed.type === "days" && !ed.days.length) { $("edErr").textContent = "Pick at least one day."; return; }
+  const nick = $("edNick").value.trim();
+  const show = nick && ed.show === "nick" ? "nick" : "icon";
+  const prev = ed.id ? medById(ed.id).schedule : null;
+  const schedule = ed.type === "none" ? null : {
+    type: ed.type, days: ed.days.slice().sort(), perWeek: +$("edPerWeek").value,
+    on: +$("edOn").value, off: +$("edOff").value, start: $("edStart").value || todayKey,
     since: (prev && prev.since) || todayKey,
   };
-  const remind = { on: document.getElementById("edRemind").checked && !!schedule, time: document.getElementById("edTime").value || "09:00" };
-  if (!name) { document.getElementById("edErr").textContent = "Give the medication a name."; return; }
-  if (edId) {
-    Object.assign(medById(edId), { name, sched, nick, show, schedule, remind, shape: edShape, color: edColor });
-  } else {
-    const id = "m" + Date.now().toString(36);
-    meds.push({ id, name, sched, nick, show, schedule, remind, shape: edShape, color: edColor });
-    activeMed = id; editing = false;
-  }
-  save(); closeEditor(); renderLegend(); renderGrid(); renderToday();
-};
-document.getElementById("edRemove").onclick = ev => {
-  const b = ev.currentTarget;
-  if (!removeArmed) { removeArmed = true; b.classList.add("confirm"); b.textContent = "Tap again to remove"; return; }
-  meds = meds.filter(m => m.id !== edId);
-  for (const k of Object.keys(days)) { if (days[k].meds) delete days[k].meds[edId]; }
-  if (activeMed === edId) activeMed = null;
-  save(); closeEditor(); renderLegend(); renderGrid(); renderToday();
-};
-
-// ---------- calendar ----------
-function renderGrid() {
-  const y = view.getFullYear(), mo = view.getMonth();
-  document.getElementById("monthTitle").textContent = view.toLocaleString("en-US", { month: "long", year: "numeric" });
-  const first = new Date(y, mo, 1).getDay();
-  const count = new Date(y, mo + 1, 0).getDate();
-  let html = "";
-  for (let i = 0; i < first; i++) html += `<div class="day blank"></div>`;
-  for (let d = 1; d <= count; d++) {
-    const k = `${y}-${pad(mo + 1)}-${pad(d)}`;
-    const e = days[k];
-    const taken = e && e.meds ? meds.filter(m => e.meds[m.id]) : [];
-    const marks = meds.map(m => {
-      if (e && e.meds && e.meds[m.id]) return mark(m);
-      if (!isDueFixed(m, k)) return "";
-      return `<span class="gw${k < todayKey ? " missed" : ""}" style="color:${m.color}" title="${esc(m.name)} ${k < todayKey ? "missed" : "due"}">${mark(m)}</span>`;
-    }).join("");
-    const dueNames = meds.filter(m => !(e && e.meds && e.meds[m.id]) && isDueFixed(m, k)).map(m => m.name);
-    const label = `${view.toLocaleString("en-US", { month: "long" })} ${d}: ` + (taken.length ? taken.map(m => m.name).join(", ") : "nothing logged") + (dueNames.length ? (k < todayKey ? ". Missed: " : ". Due: ") + dueNames.join(", ") : "") + (e && e.notes ? ". Note: " + e.notes : "");
-    html += `<button class="day${k === todayKey ? " today" : ""}" data-k="${k}" aria-label="${esc(label)}"><span class="n">${d}</span><div class="icons">${marks}</div>${e && e.notes ? `<div class="note">${icon(NOTE)}<span>${esc(e.notes)}</span></div>` : ""}</button>`;
-  }
-  document.getElementById("grid").innerHTML = html;
+  const remind = { on: $("edRemind").checked && !!schedule, time: $("edTime").value || "09:00" };
+  const fields = { name, nick, show, sched: $("edSched").value.trim(), schedule, remind, shape: ed.shape, color: ed.color };
+  if (ed.id) Object.assign(medById(ed.id), fields);
+  else meds.push(Object.assign({ id: "m" + Date.now().toString(36) }, fields));
+  save(); sheetKind = "manage"; renderSheet();
 }
-document.getElementById("grid").addEventListener("click", ev => {
-  const b = ev.target.closest(".day[data-k]"); if (!b) return;
-  if (editing) { document.getElementById("hint").innerHTML = "Tap <b>Done editing</b> first, then pick a medication."; return; }
-  if (!activeMed) { document.getElementById("hint").innerHTML = "Pick a medication above first, then tap the day."; return; }
-  const k = b.dataset.k;
-  if (activeMed === "__notes") { openNote(k); return; }
-  toggleDose(activeMed, k);
+
+// ----- sheet events -----
+sheet.addEventListener("click", ev => {
+  const t = ev.target;
+  if (t.closest("[data-close]")) { closeSheet(); return; }
+  if (sheetKind === "day") {
+    const r = t.closest("[data-dmed]");
+    if (r) { flushNote(); toggleDose(r.dataset.dmed, sheetArg); renderDaySheet(sheetArg); }
+    return;
+  }
+  if (sheetKind === "manage") {
+    const e = t.closest("[data-edit]");
+    if (e) { sheetKind = "edit"; sheetArg = e.dataset.edit || null; renderSheet(); sheet.scrollTop = 0; return; }
+    if (t.closest("#remindBtn")) { exportReminders(); return; }
+    if (t.closest("#backupBtn")) { saveBackup(); return; }
+    return;
+  }
+  if (sheetKind === "edit") {
+    if (t.closest("[data-back]")) { sheetKind = "manage"; renderSheet(); return; }
+    const d = t.closest("[data-dow]"); if (d) { const i = +d.dataset.dow; ed.days = ed.days.includes(i) ? ed.days.filter(x => x !== i) : [...ed.days, i]; edRefresh(); return; }
+    const sh = t.closest("[data-shape]"); if (sh) { ed.shape = sh.dataset.shape; edRefresh(); return; }
+    const co = t.closest("[data-color]"); if (co) { ed.color = co.dataset.color; edRefresh(); return; }
+    const sw = t.closest("[data-show]"); if (sw && !sw.disabled) { ed.show = sw.dataset.show; edRefresh(); return; }
+    if (t.closest("#edSave")) { edSave(); return; }
+    const rmb = t.closest("#edRemove");
+    if (rmb) {
+      if (!ed.armed) { ed.armed = true; rmb.classList.add("confirm"); rmb.textContent = "Tap again to remove"; return; }
+      meds = meds.filter(m => m.id !== ed.id);
+      for (const k of Object.keys(days)) if (days[k].meds) delete days[k].meds[ed.id];
+      if (activeMed === ed.id) activeMed = null;
+      save(); sheetKind = "manage"; renderSheet();
+    }
+  }
 });
-document.getElementById("prev").onclick = () => { view = new Date(view.getFullYear(), view.getMonth() - 1, 1); renderGrid(); };
-document.getElementById("next").onclick = () => { view = new Date(view.getFullYear(), view.getMonth() + 1, 1); renderGrid(); };
-document.getElementById("todayBtn").onclick = () => { view = new Date(now.getFullYear(), now.getMonth(), 1); renderGrid(); };
-
-// ---------- notes ----------
-let noteKey = null;
-function openNote(k) {
-  noteKey = k;
-  const [y, m, d] = k.split("-").map(Number);
-  document.getElementById("noteTitle").textContent = "Note for " + new Date(y, m - 1, d).toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" });
-  const existing = (days[k] && days[k].notes) || "";
-  const ta = document.getElementById("noteText");
-  ta.value = existing;
-  document.getElementById("noteDelete").hidden = !existing;
-  document.getElementById("noteBox").hidden = false;
-  ta.focus();
-}
-function closeNote() { document.getElementById("noteBox").hidden = true; noteKey = null; }
-function saveNote() {
-  if (!noteKey) return;
-  const text = document.getElementById("noteText").value.trim();
-  const e = days[noteKey] || (days[noteKey] = { meds: {}, notes: "" });
-  e.notes = text;
-  if (!text && (!e.meds || !Object.keys(e.meds).length)) delete days[noteKey];
-  save(); closeNote(); renderGrid();
-}
-document.getElementById("noteSave").onclick = saveNote;
-document.getElementById("noteCancel").onclick = closeNote;
-document.getElementById("noteDelete").onclick = () => { document.getElementById("noteText").value = ""; saveNote(); };
-document.getElementById("noteText").addEventListener("keydown", ev => { if (ev.key === "Enter" && (ev.metaKey || ev.ctrlKey)) { ev.preventDefault(); saveNote(); } });
+sheet.addEventListener("input", ev => {
+  if (sheetKind === "day" && ev.target.id === "dNote") { clearTimeout(noteTimer); noteTimer = setTimeout(flushNote, 700); }
+  if (sheetKind === "edit" && (ev.target.id === "edName" || ev.target.id === "edNick")) edRefresh();
+});
+sheet.addEventListener("change", ev => {
+  if (sheetKind === "edit" && ev.target.id === "edFreq") edRefresh();
+  if (sheetKind === "manage" && ev.target.id === "restoreFile") restoreBackup(ev.target);
+});
 
 // ---------- backup ----------
-const bmsg = t => document.getElementById("backupMsg").textContent = t;
-document.getElementById("backupBtn").onclick = async () => {
+async function saveBackup() {
   const text = JSON.stringify({ version: 2, days, meds }, null, 2);
   const name = "medication-log-" + todayKey + ".json";
   try {
     const file = new File([text], name, { type: "application/json" });
-    if (navigator.canShare && navigator.canShare({ files: [file] })) {
-      await navigator.share({ files: [file], title: "Medication log backup" });
-      bmsg("Backup ready. Save it to Files or send it to yourself.");
-      return;
-    }
+    if (navigator.canShare && navigator.canShare({ files: [file] })) { await navigator.share({ files: [file], title: "Medication log backup" }); setMsg("Backup ready. Save it to Files or send it to yourself."); return; }
   } catch (e) { if (e && e.name === "AbortError") return; }
-  const a = document.createElement("a");
-  a.href = URL.createObjectURL(new Blob([text], { type: "application/json" }));
-  a.download = name; document.body.appendChild(a); a.click(); a.remove();
-  setTimeout(() => URL.revokeObjectURL(a.href), 2000);
-  bmsg("Backup saved to Downloads.");
-};
-document.getElementById("restoreFile").onchange = ev => {
-  const f = ev.target.files[0]; if (!f) return;
+  downloadText(text, name, "application/json");
+  setMsg("Backup saved to Downloads.");
+}
+function restoreBackup(input) {
+  const f = input.files[0]; if (!f) return;
   const r = new FileReader();
   r.onload = () => {
     try {
-      const data = JSON.parse(r.result);
-      if (!data || typeof data !== "object") throw 0;
-      meds = []; days = {}; loadFrom(data);
-      activeMed = meds.length ? meds[0].id : null;
-      save(); renderLegend(); renderGrid(); renderToday();
-      bmsg("Backup restored.");
-    } catch (e) { bmsg("That file isn't a medication calendar backup."); }
-    ev.target.value = "";
+      const data = JSON.parse(r.result); if (!data || typeof data !== "object") throw 0;
+      meds = []; days = {}; loadFrom(data); activeMed = null;
+      save(); renderSheet(); setMsg("Backup restored.");
+    } catch (e) { setMsg("That file isn't a medication calendar backup."); }
+    input.value = "";
   };
   r.readAsText(f);
-};
+}
+function downloadText(text, name, type) {
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(new Blob([text], { type }));
+  a.download = name; document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+}
 
 // ---------- calendar reminders ----------
 function icsDate(k, time) { return k.replace(/-/g, "") + "T" + time.replace(":", "") + "00"; }
-function icsEsc(t) { return String(t).replace(/[\;,]/g, c => "\\" + c).replace(/\n/g, "\\n"); }
+function icsEsc(t) { return String(t).replace(/[\\;,]/g, c => "\\" + c).replace(/\n/g, "\\n"); }
 const BYDAY = ["SU", "MO", "TU", "WE", "TH", "FR", "SA"];
 const SPREAD = { 1: [1], 2: [1, 4], 3: [1, 3, 5], 4: [0, 2, 4, 6], 5: [1, 2, 3, 4, 5], 6: [1, 2, 3, 4, 5, 6] };
-function firstOnOrAfter(k, dowList) { for (let i = 0; i < 7; i++) { const d = addDays(k, i); if (dowList.includes(parseKey(d).getDay())) return d; } return k; }
+function firstOnOrAfter(k, dl) { for (let i = 0; i < 7; i++) { const d = addDays(k, i); if (dl.includes(parseKey(d).getDay())) return d; } return k; }
 function buildICS() {
   const stamp = new Date().toISOString().replace(/[-:]/g, "").replace(/\.\d+/, "");
   const ev = [];
@@ -620,11 +735,7 @@ function buildICS() {
     if (!m.remind || !m.remind.on || !m.schedule) continue;
     const s = m.schedule, t = m.remind.time || "09:00";
     const title = "Take " + m.name + (m.sched ? " (" + m.sched + ")" : "");
-    const push = (uid, start, rule, desc) => ev.push([
-      "BEGIN:VEVENT", "UID:" + uid + "@medcalendar", "DTSTAMP:" + stamp,
-      "DTSTART:" + icsDate(start, t), "DURATION:PT15M", "RRULE:" + rule,
-      "SUMMARY:" + icsEsc(title), "DESCRIPTION:" + icsEsc(desc),
-      "BEGIN:VALARM", "ACTION:DISPLAY", "DESCRIPTION:" + icsEsc(title), "TRIGGER:PT0M", "END:VALARM", "END:VEVENT"].join("\r\n"));
+    const push = (uid, start, rule, desc) => ev.push(["BEGIN:VEVENT", "UID:" + uid + "@medcalendar", "DTSTAMP:" + stamp, "DTSTART:" + icsDate(start, t), "DURATION:PT15M", "RRULE:" + rule, "SUMMARY:" + icsEsc(title), "DESCRIPTION:" + icsEsc(desc), "BEGIN:VALARM", "ACTION:DISPLAY", "DESCRIPTION:" + icsEsc(title), "TRIGGER:PT0M", "END:VALARM", "END:VEVENT"].join("\r\n"));
     const from = todayKey > (s.since || todayKey) ? todayKey : (s.since || todayKey);
     if (s.type === "daily") push(m.id + "-d", from, "FREQ=DAILY", "Every day");
     else if (s.type === "days") push(m.id + "-w", firstOnOrAfter(from, s.days), "FREQ=WEEKLY;BYDAY=" + s.days.map(d => BYDAY[d]).join(","), schedText(m));
@@ -634,20 +745,15 @@ function buildICS() {
   if (!ev.length) return null;
   return ["BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//Medication Calendar//EN", "CALSCALE:GREGORIAN", "X-WR-CALNAME:Medications", ...ev, "END:VCALENDAR", ""].join("\r\n");
 }
-document.getElementById("remindBtn").onclick = () => {
+function exportReminders() {
   const ics = buildICS();
-  if (!ics) { bmsg("Turn on a reminder first: tap Edit, tap a medication, set how often, and check Remind me."); return; }
-  const a = document.createElement("a");
-  a.href = URL.createObjectURL(new Blob([ics], { type: "text/calendar" }));
-  a.download = "medication-reminders.ics"; document.body.appendChild(a); a.click(); a.remove();
-  setTimeout(() => URL.revokeObjectURL(a.href), 4000);
-  bmsg("Open the file and choose Add All to put the reminders in your Calendar.");
-};
+  if (!ics) { setMsg("Turn on a reminder first: tap a medication above, set how often, and check Remind me."); return; }
+  downloadText(ics, "medication-reminders.ics", "text/calendar");
+  setMsg("Open the file and choose Add All to put the reminders in your Calendar.");
+}
 
-if ("serviceWorker" in navigator) { window.addEventListener("load", () => navigator.serviceWorker.register("sw.js").catch(() => {})); }
-
-document.querySelector(".key").innerHTML = `<span class="gw">${icon({ shape: "pill", color: "currentColor" })}</span> Due <span class="gw missed">${icon({ shape: "pill", color: "currentColor" })}</span> Missed`;
-renderLegend(); renderGrid(); renderToday();
+if ("serviceWorker" in navigator) window.addEventListener("load", () => navigator.serviceWorker.register("sw.js").catch(() => {}));
+renderMain();
 </script>
 </body>
 </html>
