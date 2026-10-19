@@ -7,7 +7,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Med Calendar">
-<meta name="theme-color" content="#f3f5f8">
+<meta name="theme-color" content="#5a4fcf">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icon-180.png">
 <link rel="icon" href="icon-192.png">
@@ -15,7 +15,11 @@
 <style>
 /* Layout: medication buttons across the top, full-width month grid below, add/edit form opens between them. */
 :root {
-  --bg: #f3f5f8;
+  --bg: #ece8fb;
+  --bg-grad: linear-gradient(160deg, #5a4fcf 0%, #8a63d2 34%, #c97fb8 68%, #f2a98a 100%);
+  --on-bg: #ffffff;
+  --bg-end: #f2a98a;
+  --on-bg-muted: rgba(255,255,255,.82);
   --surface: #ffffff;
   --ink: #1d2433;
   --muted: #667089;
@@ -29,18 +33,27 @@
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --bg: #12151d; --surface: #1b202b; --ink: #e8ebf3; --muted: #98a1b8; --line: #2c3342;
+    --bg: #141226; --bg-grad: linear-gradient(160deg, #1f1a4d 0%, #36265e 45%, #4a2445 100%); --bg-end: #4a2445; --on-bg: #f1eefc; --on-bg-muted: rgba(241,238,252,.75); --surface: #1b202b; --ink: #e8ebf3; --muted: #98a1b8; --line: #2c3342;
     --accent: #8d9cff; --today: #262e4a; --chip: #252b38; --danger: #ff7b7b; color-scheme: dark;
   }
 }
 :root[data-theme="dark"] {
-  --bg: #12151d; --surface: #1b202b; --ink: #e8ebf3; --muted: #98a1b8; --line: #2c3342;
+  --bg: #141226; --bg-grad: linear-gradient(160deg, #1f1a4d 0%, #36265e 45%, #4a2445 100%); --bg-end: #4a2445; --on-bg: #f1eefc; --on-bg-muted: rgba(241,238,252,.75); --surface: #1b202b; --ink: #e8ebf3; --muted: #98a1b8; --line: #2c3342;
   --accent: #8d9cff; --today: #262e4a; --chip: #252b38; --danger: #ff7b7b; color-scheme: dark;
 }
 * { box-sizing: border-box; }
 html, body { margin: 0; }
 [hidden] { display: none !important; }
-body { background: var(--bg); color: var(--ink); font-family: var(--font-body); font-size: 15px; line-height: 1.45; }
+html { background: var(--bg-end); min-height: 100%; }
+body { background: var(--bg-grad); background-color: var(--bg); min-height: 100vh; }
+header h1 { color: var(--on-bg); }
+header .sub, .hint, .backup > span, .status { color: var(--on-bg-muted) !important; }
+.hint b { color: var(--on-bg) !important; }
+.legend .tool { background: rgba(255,255,255,.18) !important; color: var(--on-bg) !important; border-color: rgba(255,255,255,.55) !important; }
+.legend .tool.on { background: var(--surface) !important; color: var(--accent) !important; border-style: solid !important; }
+.nav button, .backup .btn { box-shadow: 0 2px 6px rgb(30 20 80 / .18); border-color: transparent; }
+.legend > button.med, .cal, .editor, .notebox { box-shadow: 0 4px 16px rgb(30 20 80 / .16); border-color: transparent; }
+body { color: var(--ink); font-family: var(--font-body); font-size: 15px; line-height: 1.45; }
 .wrap { max-width: 1120px; margin: 0 auto; padding-inline: max(16px, env(safe-area-inset-left)) max(16px, env(safe-area-inset-right)); padding-block: calc(16px + env(safe-area-inset-top)) calc(32px + env(safe-area-inset-bottom)); }
 body { -webkit-tap-highlight-color: transparent; }
 @media (max-width: 520px) {
@@ -78,6 +91,15 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--accent); ou
 
 .editor { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 16px; margin-bottom: 14px; display: grid; gap: 14px; }
 .editor h2 { font-family: var(--font-display); font-size: 1.15rem; margin: 0; }
+.seg { display: inline-flex; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; align-self: flex-start; }
+.seg button { border: none; background: var(--surface); color: var(--ink); font: inherit; font-size: 14px; padding: 8px 16px; cursor: pointer; }
+.seg button + button { border-left: 1px solid var(--line); }
+.seg button[aria-pressed="true"] { background: var(--accent); color: var(--surface); font-weight: 600; }
+.seg button:disabled { opacity: .45; cursor: not-allowed; }
+.nick { display: inline-block; font-weight: 800; font-size: 11px; line-height: 1; letter-spacing: .02em; padding: 3px 4px; border-radius: 5px; background: color-mix(in srgb, currentColor 13%, transparent); white-space: nowrap; }
+.legend .nick { font-size: 13px; padding: 5px 6px; min-width: 24px; text-align: center; }
+.edit-actions .preview .nick { font-size: 14px; padding: 5px 7px; }
+@media (max-width: 520px) { .icons .nick { font-size: 9.5px; padding: 2px 3px; } }
 .row2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; }
 .field { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
 .field > span { font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); font-weight: 600; }
@@ -145,6 +167,8 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--accent); ou
     <div class="row2">
       <label class="field"><span>Name</span><input id="edName" maxlength="40" placeholder="e.g. Progesterone"></label>
       <label class="field"><span>Schedule (optional)</span><input id="edSched" maxlength="50" placeholder="e.g. Nightly, or 3 times a week"></label>
+      <label class="field"><span>Nickname (up to 6 letters)</span><input id="edNick" maxlength="6" placeholder="e.g. TC, Zep" autocapitalize="characters"></label>
+      <div class="field"><span>Show on calendar</span><div class="seg" id="edShow"><button data-show="icon">Icon</button><button data-show="nick">Nickname</button></div></div>
     </div>
     <div class="field"><span>Icon</span><div class="picks" id="edShapes"></div></div>
     <div class="field"><span>Color</span><div class="picks" id="edColors"></div></div>
@@ -203,6 +227,7 @@ const COLORS = ["#d4920f", "#8a4fd0", "#d24c7c", "#138a86", "#2f6fd6", "#3e9b3e"
 const DEFAULT_MEDS = [];
 
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const mark = (m, size) => (m.show === "nick" && m.nick) ? `<span class="nick" style="color:${m.color}">${esc(m.nick)}</span>` : icon(m, size);
 const icon = (m, size) => `<svg viewBox="0 0 24 24" aria-hidden="true" style="color:${m.color}${size ? `;width:${size}px;height:${size}px` : ""}">${SHAPES[m.shape] || SHAPES.pill}</svg>`;
 const pad = n => String(n).padStart(2, "0");
 const keyOf = d => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
@@ -246,7 +271,7 @@ function setStatus(t) { const el = document.getElementById("status"); el.textCon
 function renderLegend() {
   const lg = document.getElementById("legend");
   lg.classList.toggle("editing", editing);
-  lg.innerHTML = meds.map(m => `<button class="med" data-med="${esc(m.id)}" aria-pressed="${!editing && activeMed === m.id}" style="--mc:${m.color}">${icon(m, 24)}<span class="lg"><b>${esc(m.name)}</b>${m.sched ? `<i>${esc(m.sched)}</i>` : ""}</span></button>`).join("")
+  lg.innerHTML = meds.map(m => `<button class="med" data-med="${esc(m.id)}" aria-pressed="${!editing && activeMed === m.id}" style="--mc:${m.color}">${mark(m, 24)}<span class="lg"><b>${esc(m.name)}</b>${m.sched ? `<i>${esc(m.sched)}</i>` : ""}</span></button>`).join("")
     + `<button class="med" data-med="__notes" aria-pressed="${!editing && activeMed === "__notes"}" style="--mc:${NOTE.color}">${icon(NOTE, 24)}<span class="lg"><b>Notes</b><i>Tap a day to write</i></span></button>`
     + `<button class="tool" id="addBtn">+ Add medication</button>`
     + `<button class="tool${editing ? " on" : ""}" id="editBtn">${editing ? "Done editing" : "Edit"}</button>`;
@@ -268,6 +293,7 @@ document.getElementById("legend").addEventListener("click", ev => {
 });
 
 // ---------- editor ----------
+let edShow = "icon";
 let edId = null, edShape = "pill", edColor = COLORS[0], removeArmed = false;
 function openEditor(id) {
   edId = id; removeArmed = false;
@@ -275,6 +301,8 @@ function openEditor(id) {
   document.getElementById("edTitle").textContent = m ? `Edit ${m.name}` : "Add a medication";
   document.getElementById("edName").value = m ? m.name : "";
   document.getElementById("edSched").value = m ? (m.sched || "") : "";
+  document.getElementById("edNick").value = m ? (m.nick || "") : "";
+  edShow = m && m.show === "nick" ? "nick" : "icon";
   const used = new Set(meds.map(x => x.shape)), usedC = new Set(meds.map(x => x.color));
   edShape = m ? m.shape : (Object.keys(SHAPES).find(s => !used.has(s)) || "pill");
   edColor = m ? m.color : (COLORS.find(c => !usedC.has(c)) || COLORS[0]);
@@ -290,21 +318,30 @@ function renderPicks() {
   document.getElementById("edShapes").innerHTML = Object.keys(SHAPES).map(s => `<button data-shape="${s}" aria-label="${s} icon" aria-pressed="${s === edShape}">${icon({ shape: s, color: edColor })}</button>`).join("");
   document.getElementById("edColors").innerHTML = COLORS.map(c => `<button class="sw" data-color="${c}" aria-label="Color ${c}" aria-pressed="${c === edColor}" style="background:${c}"></button>`).join("");
   const name = document.getElementById("edName").value.trim() || "Preview";
-  document.getElementById("edPreview").innerHTML = `${icon({ shape: edShape, color: edColor })}<span>${esc(name)}</span>`;
+  const nick = document.getElementById("edNick").value.trim();
+  const nb = document.querySelector('#edShow [data-show="nick"]');
+  nb.disabled = !nick;
+  const showNow = nick && edShow === "nick" ? "nick" : "icon";
+  document.querySelectorAll("#edShow [data-show]").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.show === showNow)));
+  document.getElementById("edPreview").innerHTML = `${mark({ shape: edShape, color: edColor, nick, show: showNow })}<span>${esc(name)}</span>`;
 }
 document.getElementById("edShapes").addEventListener("click", ev => { const b = ev.target.closest("[data-shape]"); if (b) { edShape = b.dataset.shape; renderPicks(); } });
 document.getElementById("edColors").addEventListener("click", ev => { const b = ev.target.closest("[data-color]"); if (b) { edColor = b.dataset.color; renderPicks(); } });
 document.getElementById("edName").addEventListener("input", renderPicks);
+document.getElementById("edNick").addEventListener("input", renderPicks);
+document.getElementById("edShow").addEventListener("click", ev => { const b = ev.target.closest("[data-show]"); if (b && !b.disabled) { edShow = b.dataset.show; renderPicks(); } });
 document.getElementById("edCancel").onclick = closeEditor;
 document.getElementById("edSave").onclick = () => {
   const name = document.getElementById("edName").value.trim();
   const sched = document.getElementById("edSched").value.trim();
+  const nick = document.getElementById("edNick").value.trim();
+  const show = nick && edShow === "nick" ? "nick" : "icon";
   if (!name) { document.getElementById("edErr").textContent = "Give the medication a name."; return; }
   if (edId) {
-    Object.assign(medById(edId), { name, sched, shape: edShape, color: edColor });
+    Object.assign(medById(edId), { name, sched, nick, show, shape: edShape, color: edColor });
   } else {
     const id = "m" + Date.now().toString(36);
-    meds.push({ id, name, sched, shape: edShape, color: edColor });
+    meds.push({ id, name, sched, nick, show, shape: edShape, color: edColor });
     activeMed = id; editing = false;
   }
   save(); closeEditor(); renderLegend(); renderGrid();
@@ -331,7 +368,7 @@ function renderGrid() {
     const e = days[k];
     const taken = e && e.meds ? meds.filter(m => e.meds[m.id]) : [];
     const label = `${view.toLocaleString("en-US", { month: "long" })} ${d}: ` + (taken.length ? taken.map(m => m.name).join(", ") : "nothing logged") + (e && e.notes ? ". Note: " + e.notes : "");
-    html += `<button class="day${k === todayKey ? " today" : ""}" data-k="${k}" aria-label="${esc(label)}"><span class="n">${d}</span><div class="icons">${taken.map(m => icon(m)).join("")}</div>${e && e.notes ? `<div class="note">${icon(NOTE)}<span>${esc(e.notes)}</span></div>` : ""}</button>`;
+    html += `<button class="day${k === todayKey ? " today" : ""}" data-k="${k}" aria-label="${esc(label)}"><span class="n">${d}</span><div class="icons">${taken.map(m => mark(m)).join("")}</div>${e && e.notes ? `<div class="note">${icon(NOTE)}<span>${esc(e.notes)}</span></div>` : ""}</button>`;
   }
   document.getElementById("grid").innerHTML = html;
 }
