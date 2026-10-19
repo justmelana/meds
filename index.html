@@ -198,6 +198,121 @@ textarea { min-height: 80px; resize: vertical; }
 .mrow b { display: block; font-weight: 600; }
 .mrow small { color: var(--muted); font-size: 12.5px; }
 .mrow .chev { color: var(--muted); font-size: 20px; }
+
+/* first-run tour */
+.sheet.tour { width: min(calc(100% - 24px), 420px); }
+.tstage { position: relative; height: 216px; border-radius: 16px; background: var(--bg-grad); overflow: hidden; }
+.tscreen { position: absolute; left: 50%; top: 50%; width: 260px; height: 190px; margin: -95px 0 0 -130px; }
+.tscreen > * { position: absolute; }
+.tbox { background: var(--surface); border-radius: 12px; box-shadow: 0 3px 12px rgb(20 14 50 / .22); }
+.tt { font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+.trow { display: flex; align-items: center; gap: 8px; height: 34px; padding: 0 10px; border: 1px solid var(--line); border-radius: 9px; font-size: 13px; font-weight: 600; background: var(--surface); }
+.trow svg { width: 18px; height: 18px; flex: none; }
+.tchip { display: grid; place-items: center; height: 30px; border: 1.5px solid var(--line); border-radius: 999px; font-size: 12px; font-weight: 600; background: var(--surface); }
+.tfinger { width: 26px; height: 26px; border-radius: 50%; background: rgb(255 255 255 / .55); border: 2px solid #fff; box-shadow: 0 2px 8px rgb(20 14 50 / .35); z-index: 3; pointer-events: none; }
+.th { margin: 16px 0 6px; font-family: var(--font-display); font-size: 1.2rem; }
+.tp { margin: 0; color: var(--muted); font-size: 14.5px; min-height: 84px; }
+.tdots { display: flex; justify-content: center; gap: 7px; margin: 12px 0 4px; }
+.tdots button { width: 8px; height: 8px; padding: 0; border-radius: 50%; border: none; background: var(--line); cursor: pointer; }
+.tdots button[aria-current="step"] { background: var(--accent); width: 22px; border-radius: 999px; }
+.tnav { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-top: 10px; }
+.tnav .skip { border: none; background: none; color: var(--muted); font-weight: 600; cursor: pointer; padding: 8px 4px; }
+
+/* step 1: calendar fills in */
+.t1 { left: 7px; top: 22px; padding: 10px; display: grid; grid-template-columns: repeat(7, 28px); gap: 5px; }
+.t1 i { width: 28px; height: 28px; border-radius: 7px; background: var(--chip); display: grid; place-items: center; font-style: normal; font-size: 10px; color: var(--muted); }
+.t1 i svg { width: 18px; height: 18px; animation: tpop 5s infinite both; animation-delay: calc(var(--i) * .1s); }
+.t1 .td { outline: 2px solid var(--accent); }
+@keyframes tpop { 0% { transform: scale(0); } 7% { transform: scale(1.25); } 11%, 88% { transform: scale(1); } 95%, 100% { transform: scale(0); } }
+
+/* step 2: add a medication */
+.t2a, .t2b { left: 0; top: 0; width: 260px; height: 190px; padding: 12px; }
+.t2a { animation: t2a 7s infinite; opacity: 0; }
+.t2b { animation: t2b 7s infinite; }
+.t2a .trow { position: absolute; left: 12px; right: 12px; }
+.t2add { color: var(--accent); animation: t2hl 7s infinite; }
+@keyframes t2a { 0%, 31% { opacity: 1; transform: none; } 37%, 95% { opacity: 0; transform: translateX(-24px); } 100% { opacity: 1; transform: none; } }
+@keyframes t2b { 0%, 31% { opacity: 0; transform: translateX(24px); } 38%, 94% { opacity: 1; transform: none; } 100% { opacity: 0; } }
+@keyframes t2hl { 0%, 19% { background: var(--surface); } 22%, 32% { background: var(--chip); } }
+.tfield { position: absolute; left: 12px; right: 12px; height: 30px; border: 1px solid var(--line); border-radius: 8px; display: flex; align-items: center; padding: 0 9px; font-size: 13px; }
+.ttype { display: inline-block; overflow: hidden; white-space: nowrap; max-width: 9em; animation: ttype 7s infinite steps(14); }
+@keyframes ttype { 0%, 40% { max-width: 0; } 54%, 100% { max-width: 9em; } }
+.t2icons { position: absolute; left: 12px; top: 76px; display: flex; gap: 8px; }
+.t2icons i { width: 30px; height: 30px; border: 1px solid var(--line); border-radius: 8px; display: grid; place-items: center; }
+.t2icons i svg { width: 18px; height: 18px; }
+.tring { position: absolute; left: 50px; top: 74px; width: 34px; height: 34px; border: 2.5px solid var(--accent); border-radius: 10px; animation: tring 7s infinite; }
+@keyframes tring { 0%, 59% { opacity: 0; transform: scale(1.4); } 62%, 100% { opacity: 1; transform: none; } }
+.tsave { position: absolute; right: 12px; top: 152px; width: 68px; height: 28px; border-radius: 999px; background: var(--accent); color: var(--surface); display: grid; place-items: center; font-size: 12.5px; font-weight: 700; }
+.f2 { animation: f2 7s infinite; opacity: 0; }
+@keyframes f2 {
+  0% { left: 220px; top: 170px; opacity: 0; transform: none; } 8% { opacity: 1; }
+  20% { left: 117px; top: 89px; transform: none; } 23% { transform: scale(.75); } 26% { left: 117px; top: 89px; transform: none; }
+  52% { left: 52px; top: 78px; transform: none; } 58% { left: 52px; top: 78px; transform: none; } 60% { transform: scale(.75); } 63% { transform: none; }
+  76% { left: 201px; top: 153px; transform: none; } 79% { transform: scale(.75); } 82% { left: 201px; top: 153px; transform: none; opacity: 1; } 90%, 100% { left: 201px; top: 153px; opacity: 0; } }
+
+/* step 3: mark a dose */
+.t3today { left: 0; top: 0; width: 260px; height: 72px; padding: 9px 12px; }
+.t3today .trow { position: absolute; left: 12px; right: 12px; top: 30px; }
+.tpill { position: absolute; right: 8px; top: 6px; width: 58px; height: 22px; border-radius: 999px; display: grid; place-items: center; font-size: 11.5px; font-weight: 700; }
+.tpill.due { border: 1.5px dashed #8a4fd0; color: var(--ink); animation: tout 6s infinite; opacity: 0; }
+.tpill.done { background: #8a4fd0; color: #fff; animation: tin 6s infinite; }
+@keyframes tout { 0%, 23% { opacity: 1; } 25%, 100% { opacity: 0; } }
+@keyframes tin { 0%, 23% { opacity: 0; transform: scale(.6); } 27% { opacity: 1; transform: scale(1.12); } 30%, 100% { opacity: 1; transform: none; } }
+.t3tray { left: 0; top: 82px; display: flex; gap: 8px; }
+.t3tray i { width: 32px; height: 32px; border-radius: 50%; background: var(--surface); display: grid; place-items: center; box-shadow: 0 2px 6px rgb(20 14 50 / .2); }
+.t3tray i svg { width: 18px; height: 18px; }
+.t3sel { outline: 2.5px solid var(--accent); outline-offset: 2px; animation: tsel 6s infinite; }
+@keyframes tsel { 0%, 47% { outline-color: transparent; } 49%, 100% { outline-color: var(--accent); } }
+.t3cal { left: 0; top: 126px; width: 260px; height: 60px; padding: 12px; display: flex; gap: 4px; }
+.t3cal i { width: 32px; height: 36px; border-radius: 7px; background: var(--chip); display: grid; place-items: center; font-style: normal; }
+.t3cal i svg { width: 18px; height: 18px; }
+.t3stamp svg { animation: tstamp 6s infinite; }
+@keyframes tstamp { 0%, 70% { transform: scale(0); } 73% { transform: scale(1.3); } 76%, 100% { transform: none; } }
+.f3 { animation: f3 6s infinite; opacity: 0; }
+@keyframes f3 {
+  0% { left: 150px; top: 170px; opacity: 0; transform: none; } 8% { opacity: 1; }
+  19% { left: 206px; top: 34px; transform: none; } 22% { transform: scale(.75); } 25% { left: 206px; top: 34px; transform: none; }
+  44% { left: 27px; top: 85px; transform: none; } 47% { transform: scale(.75); } 50% { left: 27px; top: 85px; transform: none; }
+  67% { left: 159px; top: 141px; transform: none; } 70% { transform: scale(.75); } 73% { left: 159px; top: 141px; transform: none; opacity: 1; } 84%, 100% { left: 159px; top: 141px; opacity: 0; } }
+
+/* step 4: sites and doses */
+.t4 { left: 0; top: 0; width: 260px; height: 190px; padding: 12px; }
+.t4 .tchip { position: absolute; top: 58px; }
+.t4next { position: absolute; left: 186px; top: 40px; font-size: 10px; font-weight: 700; color: var(--accent); text-transform: uppercase; letter-spacing: .05em; }
+.t4pick { animation: tchip 6s infinite; border-color: #8a4fd0; background: #8a4fd0; color: #fff; }
+@keyframes tchip { 0%, 30% { background: var(--surface); color: var(--ink); box-shadow: 0 0 0 3px color-mix(in srgb, #8a4fd0 25%, transparent); } 33%, 100% { background: #8a4fd0; color: #fff; box-shadow: none; } }
+.t4 .tfield { top: 126px; right: auto; width: 120px; }
+.t4 .ttype { animation-name: ttype4; animation-duration: 6s; animation-timing-function: steps(6); }
+@keyframes ttype4 { 0%, 58% { max-width: 0; } 70%, 100% { max-width: 9em; } }
+.f4 { animation: f4 6s infinite; opacity: 0; }
+@keyframes f4 {
+  0% { left: 120px; top: 175px; opacity: 0; transform: none; } 8% { opacity: 1; }
+  27% { left: 193px; top: 60px; transform: none; } 30% { transform: scale(.75); } 33% { left: 193px; top: 60px; transform: none; }
+  52% { left: 59px; top: 128px; transform: none; } 55% { transform: scale(.75); } 58% { left: 59px; top: 128px; transform: none; opacity: 1; } 70%, 100% { left: 59px; top: 128px; opacity: 0; } }
+
+/* step 5: summary and backup */
+.t5a { left: 0; top: 0; width: 160px; height: 190px; padding: 12px; }
+.t5row { display: grid; grid-template-columns: 18px 1fr; gap: 7px; align-items: center; margin-top: 14px; }
+.t5row svg { width: 18px; height: 18px; }
+.t5bar { height: 10px; border-radius: 999px; background: var(--chip); overflow: hidden; }
+.t5bar b { display: block; height: 100%; width: var(--w); border-radius: 999px; background: var(--c); animation: tbar 6s infinite; }
+@keyframes tbar { 0%, 8% { width: 0; } 34%, 100% { width: var(--w); } }
+.t5b { left: 172px; top: 0; width: 88px; height: 190px; display: grid; place-items: center; align-content: center; gap: 10px; text-align: center; padding: 8px; }
+.t5doc { width: 40px; height: 40px; animation: tdrop 6s infinite; }
+@keyframes tdrop { 0%, 30% { transform: translateY(-40px); opacity: 0; } 42% { transform: translateY(4px); opacity: 1; } 46%, 100% { transform: none; opacity: 1; } }
+.t5ok { font-size: 11.5px; font-weight: 700; color: #3e9b3e; animation: tok 6s infinite; }
+@keyframes tok { 0%, 46% { opacity: 0; } 52%, 100% { opacity: 1; } }
+
+/* step 6: done */
+.t6 { left: 80px; top: 45px; width: 100px; height: 100px; }
+.t6 circle { fill: var(--surface); }
+.t6 path { fill: none; stroke: #3e9b3e; stroke-width: 7; stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: 80; animation: tcheck 4s infinite; }
+@keyframes tcheck { 0%, 10% { stroke-dashoffset: 80; } 35%, 100% { stroke-dashoffset: 0; } }
+
+@media (prefers-reduced-motion: reduce) {
+  .tstage *, .tstage *::before { animation: none !important; }
+  .tfinger { display: none; }
+}
 .mrow.add { border-style: dashed; color: var(--accent); font-weight: 600; grid-template-columns: 1fr; text-align: center; }
 .msect { margin-top: 18px; display: grid; gap: 8px; }
 .msect .btn { width: 100%; text-align: left; display: flex; justify-content: space-between; align-items: center; }
@@ -668,7 +783,7 @@ const sheet = document.getElementById("sheet"), backdrop = document.getElementBy
 let sheetKind = null, sheetArg = null;
 function openSheet(kind, arg, originEl) {
   sheetKind = kind; sheetArg = arg;
-  sheet.className = "sheet" + (kind === "day" ? " zoom" : "");
+  sheet.className = "sheet" + (kind === "day" ? " zoom" : kind === "tour" ? " zoom tour" : "");
   if (kind === "day" && originEl) {
     const r = originEl.getBoundingClientRect();
     sheet.style.transformOrigin = `calc(50% + ${r.left + r.width / 2 - window.innerWidth / 2}px) calc(50% + ${r.top + r.height / 2 - window.innerHeight / 2}px)`;
@@ -683,6 +798,7 @@ function closeSheet() {
   backdrop.classList.remove("show"); sheet.classList.remove("show");
   document.body.classList.remove("locked");
   setTimeout(() => { if (!sheet.classList.contains("show")) { sheet.hidden = true; backdrop.hidden = true; } }, 230);
+  if (sheetKind === "tour") { prefs.tourSeen = true; savePrefs(); }
   sheetKind = null;
   renderMain();
 }
@@ -694,7 +810,55 @@ function renderSheet() {
   else if (sheetKind === "manage") renderManage();
   else if (sheetKind === "edit") renderEditor(sheetArg);
   else if (sheetKind === "summary") renderSummary(sheetArg);
+  else if (sheetKind === "tour") renderTour();
 }
+
+// ----- first-run tour -----
+let tourStep = 0;
+const TA = { shape: "patch", color: "#138a86" }, TB = { shape: "syringe", color: "#8a4fd0" }, TC = { shape: "capsule", color: "#d24c7c" }, TD = { shape: "tube", color: "#d4920f" }, TE = { shape: "drop", color: "#2f6fd6" };
+const finger = c => `<b class="tfinger ${c}"></b>`;
+const TOUR = [
+  { h: "Welcome to Med Calendar", p: "Keep track of every dose, see what's due today, and spot anything you missed at a glance.",
+    art: () => { const pat = { 1: TA, 3: TB, 4: TA, 7: TC, 8: TB, 10: TA, 12: TD, 13: TA, 15: TB, 16: TC, 19: TA };
+      return `<div class="tbox t1">${Array.from({ length: 21 }, (_, i) => `<i style="--i:${i}"${i === 16 ? ' class="td"' : ""}>${pat[i] ? icon(pat[i]) : ""}</i>`).join("")}</div>`; } },
+  { h: "Add your medications", p: "Tap the settings button at the top right, then + Add medication. Pick an icon and color, and choose how often it's due: set days, times a week, a cycle, or every few days.",
+    art: () => `<div class="tbox t2a"><span class="tt">Medications</span><div class="trow" style="top:40px">${icon(TA)}Patch</div><div class="trow t2add" style="top:84px">+ Add medication</div></div>
+      <div class="tbox t2b"><span class="tt">New medication</span><div class="tfield" style="top:36px"><span class="ttype">Vitamin D</span></div>
+      <div class="t2icons"><i>${icon(TD)}</i><i>${icon(TC)}</i><i>${icon(TA)}</i><i>${icon(TE)}</i></div><b class="tring"></b>
+      <div class="tfield" style="top:114px;right:90px;color:var(--muted)">Every few days</div><div class="tsave">Save</div></div>${finger("f2")}` },
+  { h: "Mark doses as you take them", p: "Tap a medication on the Today card when you take it. To log a different day, pick its icon in the tray, then tap days on the calendar. Tap again or use Undo to fix a mistake.",
+    art: () => `<div class="tbox t3today"><span class="tt">Today</span><div class="trow">${icon(TB)}Injection<span class="tpill due">Due</span><span class="tpill done">Taken</span></div></div>
+      <div class="t3tray"><i class="t3sel">${icon(TC)}</i><i>${icon(TA)}</i></div>
+      <div class="tbox t3cal">${[0, 1, 2, 3, 4, 5, 6].map(i => `<i${i === 4 ? ' class="t3stamp"' : ""}>${i === 1 ? icon(TC) : i === 4 ? icon(TC) : ""}</i>`).join("")}</div>${finger("f3")}` },
+  { h: "Rotate sites and record doses", p: "Add sites to a medication and the app suggests the next spot in your rotation. Turn on Track dose to note the amount each time. Tap any day to see or change its details.",
+    art: () => `<div class="tbox t4"><span class="tt">Injection · Tue</span><span class="tt" style="position:absolute;left:12px;top:40px">Site</span><span class="t4next">Next</span>
+      <span class="tchip" style="left:12px;width:70px">L thigh</span><span class="tchip" style="left:88px;width:70px">Butt</span><span class="tchip t4pick" style="left:164px;width:84px">Left arm</span>
+      <span class="tt" style="position:absolute;left:12px;top:106px">Dose</span><div class="tfield"><span class="ttype">2.5 mg</span></div></div>${finger("f4")}` },
+  { h: "Summaries and backups", p: "Share a monthly summary before appointments. Your entries live only on this phone, so save a backup every couple of weeks. The app will remind you.",
+    art: () => `<div class="tbox t5a"><span class="tt">October</span>${[[TA, "100%"], [TB, "80%"], [TC, "60%"]].map(([m, w]) => `<div class="t5row">${icon(m)}<span class="t5bar"><b style="--w:${w};--c:${m.color}"></b></span></div>`).join("")}</div>
+      <div class="tbox t5b"><svg class="t5doc" viewBox="0 0 24 24" aria-hidden="true" style="color:var(--accent)"><path d="M6 3h9l4 4v13a1.5 1.5 0 0 1-1.5 1.5h-11A1.5 1.5 0 0 1 5 20V4.5A1.5 1.5 0 0 1 6.5 3z" fill="currentColor"/><path d="M12 9v6m0 0l-2.5-2.5M12 15l2.5-2.5" stroke="#fff" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="t5ok">Backup saved</span></div>` },
+  { h: "You're all set", p: "Replay this tour anytime: tap the settings button at the top right, then How it works.",
+    art: () => `<svg class="t6" viewBox="0 0 100 100" aria-hidden="true"><circle cx="50" cy="50" r="48"/><path d="M30 52l13 13 27-29"/></svg>` }
+];
+function renderTour() {
+  const s = TOUR[tourStep], last = tourStep === TOUR.length - 1;
+  sheet.setAttribute("aria-label", "How it works");
+  sheet.innerHTML = `<div class="shead"><span class="lbl">How it works · ${tourStep + 1} of ${TOUR.length}</span><button class="xbtn" data-close aria-label="Close tour">${XICON}</button></div>
+    <div class="tstage" aria-hidden="true"><div class="tscreen">${s.art()}</div></div>
+    <h3 class="th">${s.h}</h3><p class="tp">${s.p}</p>
+    <div class="tdots">${TOUR.map((_, i) => `<button data-tdot="${i}" aria-label="Step ${i + 1}"${i === tourStep ? ' aria-current="step"' : ""}></button>`).join("")}</div>
+    <div class="tnav">${tourStep ? `<button class="btn" data-tstep="-1">Back</button>` : `<button class="skip" data-close>Skip</button>`}
+      ${last ? (activeMeds().length ? `<button class="btn primary" data-close>Done</button>` : `<button class="btn primary" id="tourAdd">Add a medication</button>`) : `<button class="btn primary" data-tstep="1">Next</button>`}</div>`;
+}
+function tourGo(n) { tourStep = Math.max(0, Math.min(TOUR.length - 1, n)); renderTour(); }
+function startTour() { tourStep = 0; if (sheetKind) { closeSheet(); setTimeout(() => openSheet("tour"), 260); } else openSheet("tour"); }
+let tsx = null, tsy = null;
+sheet.addEventListener("touchstart", ev => { if (sheetKind === "tour") { tsx = ev.touches[0].clientX; tsy = ev.touches[0].clientY; } }, { passive: true });
+sheet.addEventListener("touchend", ev => {
+  if (sheetKind !== "tour" || tsx == null) return;
+  const dx = ev.changedTouches[0].clientX - tsx, dy = ev.changedTouches[0].clientY - tsy; tsx = null;
+  if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy) * 1.5) tourGo(tourStep + (dx < 0 ? 1 : -1));
+});
 
 // ----- day sheet -----
 let noteTimer = null, noteKey = null;
@@ -776,6 +940,8 @@ function renderManage() {
     <div class="msect">
       <span class="lbl">For appointments</span>
       <button class="btn" id="summaryBtn">Monthly summary <span>›</span></button>
+      <span class="lbl" style="margin-top:8px">Help</span>
+      <button class="btn" id="tourBtn">How it works <span>›</span></button>
       <span class="lbl" style="margin-top:8px">Backup</span>
       <button class="btn" id="backupBtn">Save a backup <span>›</span></button>
       <label class="btn">Restore a backup <span>›</span><input type="file" id="restoreFile" accept=".json,application/json"></label>
@@ -993,7 +1159,14 @@ sheet.addEventListener("click", ev => {
     const e = t.closest("[data-edit]");
     if (e) { go("edit", e.dataset.edit || null); return; }
     if (t.closest("#summaryBtn")) { go("summary", null); return; }
+    if (t.closest("#tourBtn")) { startTour(); return; }
     if (t.closest("#backupBtn")) { saveBackup(); return; }
+    return;
+  }
+  if (sheetKind === "tour") {
+    const st = t.closest("[data-tstep]"); if (st) { tourGo(tourStep + +st.dataset.tstep); return; }
+    const dt = t.closest("[data-tdot]"); if (dt) { tourGo(+dt.dataset.tdot); return; }
+    if (t.closest("#tourAdd")) { closeSheet(); setTimeout(() => openSheet("edit", null), 260); return; }
     return;
   }
   if (sheetKind === "summary") {
@@ -1105,6 +1278,7 @@ function exportReminders() {
 
 if ("serviceWorker" in navigator) window.addEventListener("load", () => navigator.serviceWorker.register("sw.js").catch(() => {}));
 renderMain();
+if (!prefs.tourSeen && !meds.length && !Object.keys(days).length) setTimeout(() => { if (!sheetKind) startTour(); }, 500);
 </script>
 </body>
 </html>
