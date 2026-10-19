@@ -184,6 +184,11 @@ textarea { min-height: 80px; resize: vertical; }
 .btn.primary { background: var(--accent); border-color: var(--accent); color: var(--surface); }
 .btn.danger { color: var(--danger); border-color: var(--danger); }
 .btn.danger.confirm { background: var(--danger); color: var(--surface); }
+.delbox { margin-top: 14px; padding: 14px; border: 1.5px solid var(--danger); border-radius: 14px; }
+.delbox[hidden] { display: none; }
+.delbox b { color: var(--danger); }
+.delbox p { margin: 6px 0 0; font-size: 14px; }
+.delbox .muted { color: var(--muted); }
 .empty-note { color: var(--muted); font-size: 14px; }
 
 /* manage list */
@@ -838,11 +843,18 @@ function renderEditor(id) {
     <div class="field"><span class="lbl">Color</span><div class="picks" id="edColors"></div></div>
     <div class="sfoot" style="align-items:center">
       <span class="preview" id="edPreview"></span>
+      ${m ? `<button class="btn danger" id="edDelete">Delete</button>` : ""}
       ${m && !m.archived ? `<button class="btn" id="edArchive">Archive</button>` : ""}
-      ${m && m.archived ? `<button class="btn danger" id="edDelete">Delete forever</button><button class="btn" id="edRestore">Restore</button>` : ""}
+      ${m && m.archived ? `<button class="btn" id="edRestore">Restore</button>` : ""}
       <button class="btn primary" id="edSave">Save</button>
       <span class="err" id="edErr"></span>
     </div>
+    ${m ? `<div class="delbox" id="edConfirm" hidden>
+      <b>Delete ${esc(m.name)}?</b>
+      <p>This removes it and every dose logged for it, on all past and future days. It can't be undone.</p>
+      ${m.archived ? "" : `<p class="muted">Want to keep its history? Use Archive instead.</p>`}
+      <div class="sfoot"><button class="btn" id="edDelNo">Cancel</button><button class="btn danger confirm" id="edDelYes">Delete everywhere</button></div>
+    </div>` : ""}
   </div>`;
   document.getElementById("edFreq").value = ed.type;
   edRefresh();
@@ -1002,12 +1014,15 @@ sheet.addEventListener("click", ev => {
       go("manage"); return;
     }
     if (t.closest("#edRestore")) { medById(ed.id).archived = false; save(); go("manage"); return; }
-    const del = t.closest("#edDelete");
-    if (del) {
-      if (!ed.armed) { ed.armed = true; del.classList.add("confirm"); del.textContent = "Tap again: erases all its history"; return; }
+    const cb = document.getElementById("edConfirm");
+    if (t.closest("#edDelete")) { cb.hidden = false; cb.scrollIntoView({ behavior: "smooth", block: "nearest" }); return; }
+    if (t.closest("#edDelNo")) { cb.hidden = true; return; }
+    if (t.closest("#edDelYes")) {
+      const name = medById(ed.id).name;
+      if (activeMed === ed.id) activeMed = null;
       meds = meds.filter(m => m.id !== ed.id);
       for (const k of Object.keys(days)) { if (days[k].meds) { delete days[k].meds[ed.id]; if (!Object.keys(days[k].meds).length && !days[k].notes) delete days[k]; } }
-      save(); go("manage");
+      save(true); renderMain(); go("manage"); toast(`Deleted ${name}`);
     }
   }
 });
