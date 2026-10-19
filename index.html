@@ -207,7 +207,8 @@ textarea { min-height: 80px; resize: vertical; }
 .daypick { display: flex; flex-wrap: wrap; gap: 6px; }
 .daypick button { width: 40px; height: 40px; border-radius: 50%; border: 1.5px solid var(--line); background: var(--surface); font-weight: 600; font-size: 13px; cursor: pointer; }
 .daypick button[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--surface); }
-.cyc { display: grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap: 10px; }
+.cyc { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.cyc > label:last-child { grid-column: 1 / -1; }
 .remrow { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
 .remrow input[type=time] { width: auto; }
 .chk { display: inline-flex; align-items: center; gap: 8px; font-size: 15px; }
@@ -424,6 +425,7 @@ function schedText(m) {
     else if (s.type === "days") t = s.days.length === 7 ? "Every day" : s.days.length === 1 ? "Every " + DOWL[s.days[0]] : s.days.slice().sort().map(d => DOW[d]).join(", ");
     else if (s.type === "perweek") t = s.perWeek === 1 ? "Once a week" : s.perWeek === 2 ? "Twice a week" : s.perWeek + " times a week";
     else if (s.type === "cycle") t = `${s.on} days on, ${s.off} off`;
+    else if (s.type === "interval") t = s.upto > s.every ? `Every ${s.every}–${s.upto} days` : s.every === 1 ? "Every day" : `Every ${s.every} days`;
   }
   if (perDay(m) > 1) t = (t ? t + ", " : "") + perDay(m) + "× a day";
   return t;
@@ -436,7 +438,40 @@ function isDueFixed(m, k) {
   if (s.type === "daily") return true;
   if (s.type === "days") return s.days.includes(parseKey(k).getDay());
   if (s.type === "cycle") { const d = dayDiff(s.start, k); return d >= 0 && d % (s.on + s.off) < s.on; }
+  if (s.type === "interval") return isIntervalDue(m, k);
   return false;
+}
+// ----- "every few days" schedules: the next dose is counted from the last one logged -----
+function lastDoseBefore(m, k) {
+  let best = null;
+  for (const d in days) if (d < k && days[d].meds && days[d].meds[m.id] && (!best || d > best)) best = d;
+  return best;
+}
+const ivRange = s => Math.max(0, (s.upto || s.every) - s.every);
+function intervalNext(m, k) { const s = m.schedule, prev = lastDoseBefore(m, k); return prev ? addDays(prev, s.every) : s.start; }
+function isIntervalDue(m, k) {
+  const s = m.schedule;
+  if (k <= todayKey) {
+    const next = intervalNext(m, k);
+    if (k === todayKey && next < todayKey) return true;          // overdue: keep it on today
+    if (k !== next) return false;
+    // taken a little late but still inside the allowed range: not missed
+    for (let i = 1; i <= ivRange(s); i++) { const d = addDays(k, i); if (d <= todayKey && isTaken(m, d)) return false; }
+    return true;
+  }
+  // future days: project forward from the last dose (or from today if it's overdue)
+  let p = intervalNext(m, addDays(todayKey, 1));
+  if (p <= todayKey) p = addDays(todayKey, s.every);
+  while (p < k) p = addDays(p, s.every);
+  return p === k;
+}
+function nextDueLabel(m) {
+  const s = m.schedule; if (!s || s.type !== "interval") return "";
+  if (isTaken(m, todayKey)) return "Next: " + fmtShort(addDays(todayKey, s.every));
+  const next = intervalNext(m, todayKey);
+  if (next < todayKey) return "Overdue since " + fmtShort(next);
+  if (next === todayKey) return "Due today";
+  return "Next: " + parseKey(next).toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" });
 }
 const dose = (m, k) => days[k] && days[k].meds && days[k].meds[m.id];
 const doseCount = (m, k) => { const d = dose(m, k); return d ? (d.n || 1) : 0; };
@@ -451,7 +486,11 @@ function statusFor(m, k) {
   const c = doseCount(m, k);
   if (c >= perDay(m)) return "taken";
   if (c > 0) return "partial";
-  if (isDueFixed(m, k)) return k < todayKey ? "missed" : "due";
+  if (isDueFixed(m, k)) {
+    if (k >= todayKey) return "due";
+    if (m.schedule.type === "interval" && dayDiff(k, todayKey) <= ivRange(m.schedule)) return "due";
+    return "missed";
+  }
   return "";
 }
 // results for "times a week" medications in the week starting s
@@ -526,6 +565,11 @@ function renderToday() {
       const wc = weekCount(m, todayKey);
       if (wc >= s.perWeek && !c) continue;
       items.push({ m, done, st: `${wc} of ${s.perWeek} this week${doseTxt}` });
+    } else if (s.type === "interval" && isDueFixed(m, todayKey)) {
+      const nx = intervalNext(m, todayKey);
+      items.push({ m, done, st: (done ? "Done" : nx < todayKey ? "Overdue since " + fmtShort(nx) : "Due") + doseTxt });
+    } else if (s.type === "interval" && done) {
+      items.push({ m, done, st: "Done · next " + fmtShort(addDays(todayKey, s.every)) });
     } else if (isDueFixed(m, todayKey)) items.push({ m, done, st: (done ? "Done" : c ? "In progress" : "Due") + doseTxt });
   }
   document.getElementById("todayList").innerHTML = items.length
@@ -715,7 +759,7 @@ function renderDaySheet(k) {
 let mmsg = "";
 function medRow(m) {
   const rt = remTimes(m);
-  return `<button class="mrow${m.archived ? " arch" : ""}" data-edit="${esc(m.id)}"><span class="mk">${mark(m, 28)}</span><span><b>${esc(m.name)}</b><small>${m.archived ? "Archived · history kept" : esc(medLabel(m) || "No schedule")}</small></span><span class="chev">›</span></button>`;
+  return `<button class="mrow${m.archived ? " arch" : ""}" data-edit="${esc(m.id)}"><span class="mk">${mark(m, 28)}</span><span><b>${esc(m.name)}</b><small>${m.archived ? "Archived · history kept" : esc(medLabel(m) || "No schedule")}${nextDueLabel(m) ? " · " + esc(nextDueLabel(m)) : ""}</small></span><span class="chev">›</span></button>`;
 }
 function renderManage() {
   sheet.setAttribute("aria-label", "Medications");
@@ -766,12 +810,18 @@ function renderEditor(id) {
         <label class="field"><span class="lbl">How often</span>
           <select id="edFreq">
             <option value="none">No set schedule</option><option value="daily">Every day</option><option value="days">Certain days of the week</option>
-            <option value="perweek">A number of times a week (any days)</option><option value="cycle">Days on, days off</option>
+            <option value="perweek">A number of times a week (any days)</option><option value="cycle">Days on, days off</option><option value="interval">Every few days (counts from your last dose)</option>
           </select></label>
         <label class="field"><span class="lbl">Times a day</span><select id="edPerDay">${opts([1, 2, 3, 4], ed.perDay)}</select></label>
       </div>
       <div class="field" id="fDays"><span class="lbl">Which days</span><div class="daypick" id="edDays"></div></div>
       <label class="field" id="fPerWeek"><span class="lbl">Times a week</span><select id="edPerWeek">${opts([1, 2, 3, 4, 5, 6], sc.perWeek || 3)}</select></label>
+      <div class="cyc" id="fInterval">
+        <label class="field"><span class="lbl">Every</span><select id="edEvery">${opts(Array.from({ length: 14 }, (_, i) => i + 1), sc.every || 3)}</select></label>
+        <label class="field"><span class="lbl">Up to (days)</span><select id="edUpto">${opts(Array.from({ length: 14 }, (_, i) => i + 1), sc.upto || sc.every || 4)}</select></label>
+        <label class="field"><span class="lbl">First dose (if none logged)</span><input type="date" id="edIvStart" value="${sc.start || todayKey}"></label>
+      </div>
+      <p class="xhint" id="fIntervalHint">The next dose is due this many days after the last one you log. "Up to" lets it run a little late, like every 3 to 4 days for a twice-weekly patch, before it counts as missed.</p>
       <div class="cyc" id="fCycle">
         <label class="field"><span class="lbl">Days on</span><select id="edOn">${opts(Array.from({ length: 21 }, (_, i) => i + 1), sc.on || 5)}</select></label>
         <label class="field"><span class="lbl">Days off</span><select id="edOff">${opts(Array.from({ length: 21 }, (_, i) => i + 1), sc.off || 2)}</select></label>
@@ -805,6 +855,8 @@ function edRefresh() {
   $("fDays").hidden = ed.type !== "days";
   $("fPerWeek").hidden = ed.type !== "perweek";
   $("fCycle").hidden = ed.type !== "cycle";
+  $("fInterval").hidden = ed.type !== "interval";
+  $("fIntervalHint").hidden = ed.type !== "interval";
   $("fDose").hidden = !$("edTrack").checked;
   $("edDays").innerHTML = DOW.map((d, i) => `<button data-dow="${i}" aria-label="${DOWL[i]}" aria-pressed="${ed.days.includes(i)}">${d[0]}</button>`).join("");
   const showNow = nick && ed.show === "nick" ? "nick" : "icon";
@@ -823,7 +875,9 @@ function edSave() {
   const prev = ed.id ? medById(ed.id).schedule : null;
   const schedule = ed.type === "none" ? null : {
     type: ed.type, days: ed.days.slice().sort(), perWeek: +$("edPerWeek").value,
-    on: +$("edOn").value, off: +$("edOff").value, start: $("edStart").value || todayKey,
+    on: +$("edOn").value, off: +$("edOff").value,
+    start: (ed.type === "interval" ? $("edIvStart").value : $("edStart").value) || todayKey,
+    every: +$("edEvery").value, upto: Math.max(+$("edEvery").value, +$("edUpto").value),
     since: (prev && prev.since) || todayKey,
   };
   const times = ed.times.slice(0, ed.perDay);
