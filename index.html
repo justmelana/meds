@@ -477,6 +477,27 @@ input.sw:checked::after { transform: translateX(18px); }
   0% { left: 200px; top: 170px; opacity: 0; transform: none; } 8% { opacity: 1; }
   20% { left: 134px; top: 71px; transform: none; } 23% { transform: scale(.75); } 26% { left: 134px; top: 71px; transform: none; }
   58% { left: 171px; top: 147px; transform: none; } 62% { transform: scale(.75); } 65% { left: 171px; top: 147px; transform: none; opacity: 1; } 76%, 100% { left: 171px; top: 147px; opacity: 0; } }
+
+/* label scanner */
+.scanbar { display: flex; align-items: center; gap: 12px; padding: 10px 12px; border: 1.5px dashed var(--accent); border-radius: 14px; background: color-mix(in srgb, var(--accent) 6%, var(--surface)); }
+.scanbtn { display: inline-flex; align-items: center; gap: 7px; flex: none; color: var(--accent); border-color: var(--accent); }
+.scanbtn svg { width: 20px; height: 20px; }
+.scanbar .xhint { margin: 0; }
+.scanp { display: grid; gap: 8px; padding: 12px 14px; border: 1px solid var(--line); border-radius: 14px; background: var(--surface); }
+.scanp .xhint { margin: 0; }
+.sbar { height: 8px; border-radius: 999px; background: var(--chip); overflow: hidden; }
+.sbar i { display: block; height: 100%; background: var(--accent); border-radius: 999px; transition: width .3s; }
+.srows { display: grid; gap: 6px; }
+.srow { display: grid; grid-template-columns: 22px 92px minmax(0, 1fr); align-items: center; gap: 8px; padding: 8px 10px; border: 1px solid var(--line); border-radius: 10px; cursor: pointer; }
+.srow input { width: 18px; height: 18px; margin: 0; accent-color: var(--accent); }
+.srow .sl { font-size: 12.5px; color: var(--muted); font-weight: 600; }
+.srow .sv { font-weight: 600; display: flex; flex-wrap: wrap; align-items: center; column-gap: 6px; min-width: 0; overflow-wrap: anywhere; }
+.srow .sv small { flex-basis: 100%; }
+.srow .sv small { color: var(--muted); font-weight: 500; }
+.srow .sv svg { width: 26px; height: 26px; }
+.sthumb { width: 40px; height: 40px; border-radius: 8px; object-fit: cover; }
+.sraw summary { font-size: 13px; color: var(--muted); cursor: pointer; }
+.sraw pre { white-space: pre-wrap; font-size: 12px; background: var(--chip); padding: 8px 10px; border-radius: 8px; max-height: 160px; overflow: auto; margin: 6px 0 0; }
 </style>
 </head>
 <body>
@@ -545,7 +566,8 @@ const COLORS = ["#d4920f", "#8a4fd0", "#d24c7c", "#138a86", "#2f6fd6", "#3e9b3e"
 
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 const icon = (m, size) => `<svg viewBox="0 0 24 24" aria-hidden="true" style="color:${m.color}${size ? `;width:${size}px;height:${size}px` : ""}">${SHAPES[m.shape] || SHAPES.pill}</svg>`;
-const mark = (m, size) => (m.show === "nick" && m.nick) ? `<span class="nick" style="color:${m.color}">${esc(m.nick)}</span>` : icon(m, size);
+const photoMark = (m, size) => { const id = "pc" + String(m.id || "pv").replace(/[^a-z0-9]/gi, ""); return `<svg viewBox="0 0 24 24" aria-hidden="true" style="${size ? `width:${size}px;height:${size}px` : ""}"><defs><clipPath id="${id}"><rect x="1" y="1" width="22" height="22" rx="6"/></clipPath></defs><image href="${m.photo}" x="1" y="1" width="22" height="22" preserveAspectRatio="xMidYMid slice" clip-path="url(#${id})"/><rect x="1" y="1" width="22" height="22" rx="6" fill="none" stroke="${m.color}" stroke-width="1.8"/></svg>`; };
+const mark = (m, size) => (m.show === "photo" && m.photo) ? photoMark(m, size) : (m.show === "nick" && m.nick) ? `<span class="nick" style="color:${m.color}">${esc(m.nick)}</span>` : icon(m, size);
 const pad = n => String(n).padStart(2, "0");
 const keyOf = d => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
 const parseKey = k => { const [y, m, d] = k.split("-").map(Number); return new Date(y, m - 1, d); };
@@ -1189,6 +1211,165 @@ const setMsg = t => { mmsg = t; const el = document.getElementById("mmsg"); if (
 // ----- editor sheet -----
 let ed = null;
 const remTimes = m => (m.remind && (m.remind.times && m.remind.times.length ? m.remind.times : [m.remind.time || "09:00"])) || ["09:00"];
+
+// ----- label scanner (reads the photo on the phone; nothing is uploaded) -----
+const CAMI = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8.5A2.5 2.5 0 0 1 6.5 6h1.6l1.4-2h5l1.4 2h1.6A2.5 2.5 0 0 1 20 8.5v8a2.5 2.5 0 0 1-2.5 2.5h-11A2.5 2.5 0 0 1 4 16.5z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><circle cx="12" cy="12.5" r="3.4" fill="none" stroke="currentColor" stroke-width="2"/></svg>';
+const OCR_JS = "https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js";
+const DRUGS = ("Abilify Acetaminophen Acyclovir Adderall Albuterol Alendronate Allopurinol Alprazolam Amitriptyline Amlodipine Amoxicillin Anastrozole Apixaban Aripiprazole Aspirin Atenolol Atorvastatin Azithromycin " +
+  "Baclofen Benazepril Bupropion Buspirone Bydureon Byetta Carvedilol Cefdinir Celecoxib Cephalexin Cetirizine Ciprofloxacin Citalopram Clonazepam Clonidine Clopidogrel Cyclobenzaprine " +
+  "Dapagliflozin Depo-Provera Depo-Testosterone Desvenlafaxine Dexamethasone Diazepam Diclofenac Divigel Donepezil Doxycycline Dulaglutide Duloxetine Eliquis Empagliflozin Enoxaparin Escitalopram Estrace Estradiol Estring Estrogel Estrogen Evamist Exenatide Ezetimibe " +
+  "Famotidine Farxiga Fenofibrate Finasteride Fluconazole Fluoxetine Fluticasone Folic Furosemide Gabapentin Glimepiride Glipizide Glyburide Humalog Humira Hydrochlorothiazide Hydrocodone Hydroxychloroquine Hydroxyzine Ibuprofen Imvexxy Insulin Invokana Irbesartan Jardiance " +
+  "Lamotrigine Lansoprazole Lantus Letrozole Levemir Levetiracetam Levocetirizine Levofloxacin Levothyroxine Lexapro Liothyronine Liraglutide Lisinopril Lithium Loratadine Lorazepam Losartan Lovastatin Lyrica " +
+  "Medroxyprogesterone Meloxicam Metformin Methocarbamol Methotrexate Methylphenidate Methylprednisolone Metoprolol Metronidazole Minivelle Mirtazapine Montelukast Mounjaro Naltrexone Naproxen Nexium Nifedipine Nitrofurantoin Norethindrone Novolog Nurtec " +
+  "Olanzapine Olmesartan Omeprazole Ondansetron Oxybutynin Oxycodone Ozempic Pantoprazole Paroxetine Penicillin Phentermine Pioglitazone Potassium Pravastatin Prednisolone Prednisone Pregabalin Premarin Prempro Progesterone Prometrium Promethazine Propranolol Prozac " +
+  "Quetiapine Ramipril Ranitidine Rybelsus Risperidone Rizatriptan Rosuvastatin Saxenda Semaglutide Sermorelin Sertraline Sildenafil Simvastatin Sitagliptin Spironolactone Sumatriptan Synthroid Tadalafil Tamoxifen Tamsulosin Testosterone Tirzepatide Topiramate Tramadol Trazodone Trulicity " +
+  "Valacyclovir Valsartan Venlafaxine Verapamil Victoza Vitamin Vivelle-Dot Warfarin Wegovy Xarelto Zepbound Zoloft Zolpidem Zyrtec Climara Alora Menostar Androgel Testim Xyosted Vagifem Yuvafem Intrarosa BPC-157 Ipamorelin CJC-1295 Tesamorelin").split(" ");
+const STOP = new Set("rx qty quantity refill refills take use apply inject injection insert place one two three tab tabs tablet tablets capsule capsules cap caps oral by mouth dr doctor md np pa pharmacy pharmacist date exp expires discard filled fill for the and with without food daily weekly each every day days week weeks time times patient name generic brand substituted manufacturer mfr ndc store keep refrigerate refrigerated original rph warning caution may cause drowsiness directions".split(" "));
+let ocrWorker = null, scanRes = null;
+const loadScript = src => new Promise((ok, no) => { if (window.Tesseract) return ok(); const s = document.createElement("script"); s.src = src; s.onload = ok; s.onerror = () => no(new Error("load")); document.head.appendChild(s); });
+function lev(a, b) {
+  if (Math.abs(a.length - b.length) > 2) return 9;
+  const d = Array.from({ length: a.length + 1 }, (_, i) => [i]);
+  for (let j = 1; j <= b.length; j++) d[0][j] = j;
+  for (let i = 1; i <= a.length; i++) for (let j = 1; j <= b.length; j++) d[i][j] = Math.min(d[i - 1][j] + 1, d[i][j - 1] + 1, d[i - 1][j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1));
+  return d[a.length][b.length];
+}
+const NUMW = { one: 1, two: 2, three: 3, four: 4, five: 5, six: 6, seven: 7, once: 1, twice: 2 };
+const numOf = w => NUMW[w] || +w;
+function parseLabel(text) {
+  const raw = text.replace(/\r/g, "");
+  const L = " " + raw.toLowerCase().replace(/[|]/g, "l").replace(/\s+/g, " ") + " ";
+  const out = {};
+  // dose / strength
+  const dm = raw.replace(/(\d)\s*,\s*(\d)/g, "$1.$2").match(/(\d+(?:\.\d+)?)\s*(mg|mcg|µg|ug|ml|g|units?|iu|%)(?![a-z])(?:\s*\/\s*(\d+(?:\.\d+)?)?\s*(ml|hr|hrs|hours?|24\s?hr|day|actuation|spray|g)\b)?/i);
+  if (dm) { const u = dm[2].toLowerCase().replace("ug", "mcg").replace("µg", "mcg").replace(/^unit$/, "units").replace("ml", "mL").replace(/^iu$/, "IU");
+    out.dose = `${dm[1]}${u === "%" ? "" : " "}${u}` + (dm[4] ? `/${dm[3] || ""}${dm[3] ? " " : ""}${dm[4].toLowerCase().replace("ml", "mL").replace(/\s/g, "")}` : ""); }
+  // name: known medication names first, then the words before the strength
+  const words = (raw.match(/[A-Za-z][A-Za-z0-9-]{3,}/g) || []);
+  let best = null;
+  for (const [pos, w] of words.entries()) {
+    const lw = w.toLowerCase();
+    for (const d of DRUGS) {
+      const ld = d.toLowerCase(), tol = ld.length >= 8 ? 2 : ld.length >= 5 ? 1 : 0;
+      const dist = lw === ld ? 0 : lev(lw, ld);
+      if (dist <= tol && (!best || dist < best.dist || (dist === best.dist && pos < best.pos))) best = { name: d, dist, pos };
+    }
+  }
+  if (best) { out.name = best.name;
+    if (/^(Vitamin|Folic)$/.test(best.name)) { const t = raw.match(new RegExp(best.name + "\\s+([A-Za-z]?\\d{0,3}[A-Za-z]?)", "i")); out.name = best.name === "Folic" ? "Folic acid" : "Vitamin" + (t && t[1] && t[1].length <= 4 ? " " + t[1].toUpperCase() : ""); } }
+  else {
+    const line = raw.split("\n").find(l => /\d\s*(mg|mcg|ml|units?|%)/i.test(l)) || "";
+    const nm = (line.split(/\d/)[0].match(/[A-Za-z][A-Za-z-]{2,}/g) || []).filter(w => !STOP.has(w.toLowerCase())).slice(0, 3);
+    if (nm.length) out.name = nm.map(w => w[0].toUpperCase() + w.slice(1).toLowerCase()).join(" ");
+  }
+  // form
+  const forms = [[/patch|transdermal/, "patch"], [/softgel|gelcap/, "capsule"], [/cream|\bgel\b|ointment|lotion/, "tube"], [/\bpen\b|auto-?injector|kwikpen/, "pen"], [/inject|syringe|\bvial|subcutaneous|subq|sub-q|intramuscular/, "syringe"],
+    [/insert|vaginal|suppositor|ring\b/, "capsule"], [/capsule|\bcap\b/, "capsule"], [/tablet|\btab\b/, "pill"], [/spray|nasal|inhal/, "spray"], [/drops?\b|solution|liquid|suspension/, "drop"]];
+  for (const [re, sh] of forms) if (re.test(L)) { out.shape = sh; break; }
+  // how often
+  const N = "(\\d+|one|two|three|four|five|six|seven|once|twice)";
+  let m;
+  if ((m = L.match(/(\d+)\s*days?\s*on[, ]*(?:and |then )?(\d+)\s*days?\s*off/))) out.sched = { type: "cycle", on: +m[1], off: +m[2] };
+  else if ((m = L.match(/every\s*(\d+)\s*(?:to|-|–|or)\s*(\d+)\s*days/)) && +m[2] <= 14) out.sched = { type: "interval", every: +m[1], upto: +m[2] };
+  else if ((m = L.match(new RegExp("every\\s*" + N + "\\s*weeks?"))) && numOf(m[1]) <= 2) out.sched = { type: "interval", every: 7 * numOf(m[1]), upto: 7 * numOf(m[1]) };
+  else if (/(twice|two times|2 ?(x|times)) (a|per|each|every) ?week|twice weekly|2 ?x ?weekly|two times weekly/.test(L)) out.sched = { type: "perweek", perWeek: 2 };
+  else if ((m = L.match(new RegExp(N + " ?(?:x|times) (?:a|per|each|every) ?week|" + N + " ?(?:x|times) weekly")))) { const n = numOf(m[1] || m[2]); out.sched = n === 1 ? { type: "interval", every: 7, upto: 7 } : { type: "perweek", perWeek: Math.min(6, n) }; }
+  else if (/(once|one time|1 ?(x|time)) (a|per|each|every) ?week|once weekly|\bweekly\b|every week|every 7 days|\bq ?wk\b|\bq ?week\b/.test(L)) out.sched = { type: "interval", every: 7, upto: 7 };
+  else if (/every other day|\bqod\b/.test(L)) out.sched = { type: "interval", every: 2, upto: 2 };
+  else if ((m = L.match(/every\s*(\d+)\s*days/)) && +m[1] >= 2 && +m[1] <= 14) out.sched = { type: "interval", every: +m[1], upto: +m[1] };
+  else if (/(four|4 ?(x|times)) (a|per|each) day|four times daily|\bqid\b|every 6 hours/.test(L)) out.sched = { type: "daily", perDay: 4 };
+  else if (/(three|3 ?(x|times)) (a|per|each) day|three times daily|\btid\b|every 8 hours/.test(L)) out.sched = { type: "daily", perDay: 3 };
+  else if (/(twice|two times|2 ?(x|times)) (a|per|each) day|twice daily|\bbid\b|every 12 hours|morning and (evening|night|bedtime)/.test(L)) out.sched = { type: "daily", perDay: 2 };
+  else if (/(once|one time|1 ?(x|time)) (a|per|each) day|once daily|\bdaily\b|every day|\bqd\b|every (morning|evening|night)|at bedtime|nightly|each day/.test(L)) out.sched = { type: "daily", perDay: 1 };
+  else {
+    const dn = [/\bsun(day)?s?\b/, /\bmon(day)?s?\b/, /\btue(s|sday)?s?\b/, /\bwed(nesday)?s?\b/, /\bthu(r|rs|rsday)?s?\b/, /\bfri(day)?s?\b/, /\bsat(urday)?s?\b/].map((re, i) => re.test(L) ? i : -1).filter(i => i >= 0);
+    if (dn.length && dn.length < 7) out.sched = { type: "days", days: dn };
+  }
+  return out;
+}
+function scheduleLabel(s) {
+  if (!s) return "";
+  if (s.type === "daily") return s.perDay > 1 ? `Every day, ${s.perDay} times a day` : "Every day";
+  if (s.type === "perweek") return s.perWeek === 2 ? "Twice a week" : `${s.perWeek} times a week`;
+  if (s.type === "interval") return s.every === 7 ? "Once a week (counts from your last dose)" : s.upto > s.every ? `Every ${s.every} to ${s.upto} days` : `Every ${s.every} days`;
+  if (s.type === "cycle") return `${s.on} days on, ${s.off} days off`;
+  if (s.type === "days") return s.days.map(d => DOWL[d]).join(", ");
+  return "";
+}
+async function prepImage(file) {
+  let bmp;
+  try { bmp = await createImageBitmap(file, { imageOrientation: "from-image" }); }
+  catch (e) { bmp = await new Promise((ok, no) => { const im = new Image(); im.onload = () => ok(im); im.onerror = no; im.src = URL.createObjectURL(file); }); }
+  const W = bmp.width, H = bmp.height, sc = Math.min(1, 1800 / Math.max(W, H));
+  const c = document.createElement("canvas"); c.width = Math.round(W * sc); c.height = Math.round(H * sc);
+  const x = c.getContext("2d"); x.drawImage(bmp, 0, 0, c.width, c.height);
+  // thumbnail: centre square
+  const t = document.createElement("canvas"); t.width = t.height = 72; const s = Math.min(W, H);
+  t.getContext("2d").drawImage(bmp, (W - s) / 2, (H - s) / 2, s, s, 0, 0, 72, 72);
+  const thumb = t.toDataURL("image/jpeg", .72);
+  // greyscale and stretch contrast so print stands out
+  const img = x.getImageData(0, 0, c.width, c.height), p = img.data, hist = new Uint32Array(256);
+  for (let i = 0; i < p.length; i += 4) { const g = (p[i] * .299 + p[i + 1] * .587 + p[i + 2] * .114) | 0; p[i] = g; hist[g]++; }
+  const n = p.length / 4; let lo = 0, hi = 255, acc = 0;
+  for (; lo < 255; lo++) { acc += hist[lo]; if (acc > n * .02) break; }
+  acc = 0; for (; hi > 0; hi--) { acc += hist[hi]; if (acc > n * .02) break; }
+  const k = 255 / Math.max(1, hi - lo);
+  for (let i = 0; i < p.length; i += 4) { const g = Math.max(0, Math.min(255, (p[i] - lo) * k)); p[i] = p[i + 1] = p[i + 2] = g; }
+  x.putImageData(img, 0, 0);
+  return { canvas: c, thumb };
+}
+function scanUI(html) { const b = document.getElementById("scanBox"); if (!b) return null; b.hidden = !html; b.innerHTML = html || ""; return b; }
+async function scanLabel(file) {
+  if (!file) return;
+  scanRes = null;
+  scanUI(`<div class="scanp"><b>Reading the label…</b><div class="sbar"><i id="scanPct" style="width:4%"></i></div><span class="xhint" id="scanMsg">Getting ready. The first scan downloads the reader, which takes a little longer.</span></div>`);
+  const pct = (v, msg) => { const i = document.getElementById("scanPct"); if (i) i.style.width = Math.max(4, Math.round(v * 100)) + "%"; const s = document.getElementById("scanMsg"); if (s && msg) s.textContent = msg; };
+  try {
+    const { canvas, thumb } = await prepImage(file);
+    await loadScript(OCR_JS);
+    if (!ocrWorker) ocrWorker = await Tesseract.createWorker("eng", 1, { logger: l => { if (l.status === "recognizing text") pct(.35 + l.progress * .65, "Reading the text…"); else if (/load/.test(l.status)) pct(.05 + (l.progress || 0) * .3, "Downloading the reader (only the first time)…"); } });
+    pct(.36, "Reading the text…");
+    const { data } = await ocrWorker.recognize(canvas);
+    const text = (data && data.text || "").trim();
+    scanRes = Object.assign(parseLabel(text), { text, thumb });
+    showScanResult();
+  } catch (e) {
+    scanUI(`<div class="scanp"><b>Couldn't read the photo</b><p class="xhint">${navigator.onLine === false ? "The first scan needs an internet connection to download the reader. Try again when you're online." : "Something went wrong reading that photo. Try another one, or type the details in."}</p><div class="sfoot"><button class="btn" id="scanCancel">Close</button><label class="btn primary">Try again<input type="file" accept="image/*" data-scan hidden></label></div></div>`);
+  }
+}
+function showScanResult() {
+  const r = scanRes, rows = [];
+  if (r.name) rows.push(["name", "Name", esc(r.name)]);
+  if (r.dose) rows.push(["dose", "Dose", `<span>${esc(r.dose)}</span><small>Turns on dose tracking</small>`]);
+  if (r.sched) rows.push(["sched", "How often", esc(scheduleLabel(r.sched))]);
+  if (r.shape) rows.push(["shape", "Icon", icon({ shape: r.shape, color: ed.color }, 26)]);
+  rows.push(["photo", "Use the photo as its icon", `<img src="${r.thumb}" alt="" class="sthumb">`]);
+  const found = rows.length > 1;
+  scanUI(`<div class="scanp"><b>${found ? "Here's what I found" : "I couldn't find the details"}</b>
+    ${found ? `<p class="xhint">Untick anything that's wrong. You can still edit everything after.</p>` : `<p class="xhint">Try again with the label flat, straight and in good light, close enough to fill the screen. Or type the details in.</p>`}
+    <div class="srows">${rows.map(([k, l, v]) => `<label class="srow"><input type="checkbox" data-sk="${k}"${k === "photo" ? "" : " checked"}><span class="sl">${l}</span><span class="sv">${v}</span></label>`).join("")}</div>
+    ${r.text ? `<details class="sraw"><summary>What the camera read</summary><pre>${esc(r.text)}</pre></details>` : ""}
+    <div class="sfoot"><button class="btn" id="scanCancel">Cancel</button><label class="btn">Try again<input type="file" accept="image/*" data-scan hidden></label><button class="btn primary" id="scanApply">Fill in</button></div></div>`);
+}
+function applyScan() {
+  const r = scanRes; if (!r) return;
+  const on = k => { const c = document.querySelector(`[data-sk="${k}"]`); return c && c.checked; };
+  const $ = id => document.getElementById(id);
+  if (on("name") && r.name) $("edName").value = r.name;
+  if (on("dose") && r.dose) { $("edDose").value = r.dose; $("edTrack").checked = true; }
+  if (on("shape") && r.shape) ed.shape = r.shape;
+  if (on("photo")) { ed.photo = r.thumb; ed.show = "photo"; }
+  if (on("sched") && r.sched) {
+    const s = r.sched; $("edFreq").value = s.type;
+    if (s.type === "daily") $("edPerDay").value = s.perDay || 1;
+    if (s.type === "perweek") $("edPerWeek").value = s.perWeek;
+    if (s.type === "interval") { $("edEvery").value = s.every; $("edUpto").value = s.upto || s.every; }
+    if (s.type === "cycle") { $("edOn").value = Math.min(21, s.on); $("edOff").value = Math.min(21, s.off); }
+    if (s.type === "days") ed.days = s.days.slice();
+  }
+  scanUI(""); edRefresh(); toast("Filled in from the label. Check it, then Save.");
+}
+
 function renderEditor(id) {
   const m = id ? medById(id) : null;
   const used = new Set(meds.map(x => x.shape)), usedC = new Set(meds.map(x => x.color));
@@ -1196,7 +1377,7 @@ function renderEditor(id) {
   const rm = (m && m.remind) || { on: false };
   const times = m ? remTimes(m) : ["09:00"];
   ed = {
-    id, show: m && m.show === "nick" ? "nick" : "icon",
+    id, show: m && (m.show === "nick" || m.show === "photo") ? m.show : "icon", photo: m ? m.photo || null : null,
     shape: m ? m.shape : (Object.keys(SHAPES).find(s => s !== "note" && !used.has(s)) || "pill"),
     color: m ? m.color : (COLORS.find(c => !usedC.has(c)) || COLORS[0]),
     type: sc.type || "none", days: (sc.days || []).slice(), perDay: m ? perDay(m) : 1,
@@ -1207,11 +1388,13 @@ function renderEditor(id) {
   sheet.innerHTML = `<div class="shead"><div><button class="backbtn" data-back>‹ Medications</button><h2>${m ? "Edit " + esc(m.name) : "Add a medication"}</h2></div><button class="xbtn" data-close aria-label="Close">${XICON}</button></div>
   <div class="ed">
     ${m && m.archived ? `<div class="inst">This medication is archived. Its past doses still show on the calendar, but it's hidden everywhere else.</div>` : ""}
+    ${m && m.archived ? "" : `<div class="scanbar"><label class="btn scanbtn">${CAMI}Scan a label<input type="file" accept="image/*" data-scan hidden></label><span class="xhint">${m ? "Take a photo of the box or label to update this." : "Take a photo of the box, pen or pharmacy label to fill this in."} The photo stays on your phone.</span></div>
+    <div id="scanBox" hidden></div>`}
     <div class="row2">
       <label class="field"><span class="lbl">Name</span><input id="edName" maxlength="40" placeholder="e.g. Progesterone" value="${esc(m ? m.name : "")}"></label>
       <label class="field"><span class="lbl">Nickname (up to 6 letters)</span><input id="edNick" maxlength="6" placeholder="e.g. TC, Zep" value="${esc(m ? m.nick || "" : "")}"></label>
     </div>
-    <div class="field"><span class="lbl">Show on calendar</span><div class="segc" id="edShow"><button data-show="icon">Icon</button><button data-show="nick">Nickname</button></div></div>
+    <div class="field"><span class="lbl">Show on calendar</span><div class="segc" id="edShow"><button data-show="icon">Icon</button><button data-show="nick">Nickname</button><button data-show="photo">Photo</button></div></div>
     <div class="sched">
       <div class="row2">
         <label class="field"><span class="lbl">How often</span>
@@ -1273,12 +1456,14 @@ function edRefresh() {
   $("fIntervalHint").hidden = ed.type !== "interval";
   $("fDose").hidden = !$("edTrack").checked;
   $("edDays").innerHTML = DOW.map((d, i) => `<button data-dow="${i}" aria-label="${DOWL[i]}" aria-pressed="${ed.days.includes(i)}">${d[0]}</button>`).join("");
-  const showNow = nick && ed.show === "nick" ? "nick" : "icon";
+  const showNow = ed.show === "photo" && ed.photo ? "photo" : nick && ed.show === "nick" ? "nick" : "icon";
   document.querySelector('#edShow [data-show="nick"]').disabled = !nick;
+  document.querySelector('#edShow [data-show="photo"]').disabled = !ed.photo;
+  document.querySelector('#edShow [data-show="photo"]').hidden = !ed.photo;
   document.querySelectorAll("#edShow [data-show]").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.show === showNow)));
   $("edShapes").innerHTML = Object.keys(SHAPES).filter(s => s !== "note").map(s => `<button data-shape="${s}" aria-label="${s} icon" aria-pressed="${s === ed.shape}">${icon({ shape: s, color: ed.color })}</button>`).join("");
   $("edColors").innerHTML = COLORS.map(c => `<button class="sw" data-color="${c}" aria-label="Color ${c}" aria-pressed="${c === ed.color}" style="background:${c}"></button>`).join("");
-  $("edPreview").innerHTML = `${mark({ shape: ed.shape, color: ed.color, nick, show: showNow }, 30)}<span>${esc($("edName").value.trim() || "Preview")}</span>`;
+  $("edPreview").innerHTML = `${mark({ shape: ed.shape, color: ed.color, nick, show: showNow, photo: ed.photo, id: ed.id || "pv" }, 30)}<span>${esc($("edName").value.trim() || "Preview")}</span>`;
 }
 function edSave() {
   const $ = id => document.getElementById(id);
@@ -1296,7 +1481,7 @@ function edSave() {
   };
   const times = ed.times.slice(0, ed.perDay);
   const fields = {
-    name, nick, show: nick && ed.show === "nick" ? "nick" : "icon", sched: $("edSched").value.trim(), schedule,
+    name, nick, show: ed.show === "photo" && ed.photo ? "photo" : nick && ed.show === "nick" ? "nick" : "icon", photo: ed.photo || null, sched: $("edSched").value.trim(), schedule,
     remind: (ed.id && medById(ed.id).remind) || { on: false, time: times[0], times },
     perDay: ed.perDay, sites: $("edSites").value.split(",").map(s => s.trim()).filter(Boolean),
     trackDose: $("edTrack").checked, dose: $("edDose").value.trim(), shape: ed.shape, color: ed.color,
@@ -1446,6 +1631,8 @@ sheet.addEventListener("click", ev => {
     const co = t.closest("[data-color]"); if (co) { ed.color = co.dataset.color; edRefresh(); return; }
     const sw = t.closest("[data-show]"); if (sw && !sw.disabled) { ed.show = sw.dataset.show; edRefresh(); return; }
     if (t.closest("#edSave")) { edSave(); return; }
+    if (t.closest("#scanCancel")) { scanUI(""); return; }
+    if (t.closest("#scanApply")) { applyScan(); return; }
     if (t.closest("#edArchive")) {
       const m = medById(ed.id); m.archived = true; if (activeMed === m.id) activeMed = null;
       save(true); renderMain(); toast(`Archived ${m.name}`, () => { m.archived = false; save(true); renderMain(); if (sheetKind === "manage") renderManage(); });
@@ -1472,6 +1659,7 @@ sheet.addEventListener("input", ev => {
 sheet.addEventListener("change", ev => {
   const t = ev.target;
   if (sheetKind === "edit" && ["edFreq", "edPerDay", "edTrack"].includes(t.id)) edRefresh();
+  if (sheetKind === "edit" && t.dataset.scan != null) { const f = t.files[0]; t.value = ""; scanLabel(f); }
   if (sheetKind === "manage" && t.id === "restoreFile") restoreBackup(t);
   if (sheetKind === "manage" && (t.id === "trBp" || t.id === "trWt")) { track[t.id === "trBp" ? "bp" : "wt"] = t.checked; save(true); renderManage(); renderMain(); }
   if (sheetKind === "day" && t.dataset.amt) { const d = dose(medById(t.dataset.amt), sheetArg); if (d) { d.amt = t.value.trim(); save(true); toast("Dose saved"); } }
